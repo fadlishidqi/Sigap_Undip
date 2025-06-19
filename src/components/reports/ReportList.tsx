@@ -1,11 +1,10 @@
 // src/components/reports/ReportList.tsx
 "use client";
 
-import { useState, useEffect, MouseEvent } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { 
  RefreshCw, 
- Filter, 
  Search, 
  Loader2, 
  FileText, 
@@ -13,7 +12,6 @@ import {
  CheckCircle, 
  AlertCircle, 
  XCircle,
- User,
  MapPin,
  Info,
  X,
@@ -55,6 +53,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import Image from "next/image";
 
 // Definisikan interface untuk laporan dan pengguna
 interface ReportUser {
@@ -507,7 +506,7 @@ export default function ReportList() {
    }
  };
 
- function handleRefresh(event: MouseEvent<HTMLButtonElement>): void {
+ function handleRefresh(): void {
    setIsRefreshing(true);
    fetchReports();
  }
@@ -594,7 +593,7 @@ export default function ReportList() {
            color: "text-green-600 dark:text-green-400",
            bg: "bg-green-50 dark:bg-green-900/20"
          }
-       ].map((stat, index) => (
+       ].map((stat) => (
          <div
            key={stat.label}
            className="bg-white dark:bg-gray-900 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300"
@@ -797,7 +796,7 @@ export default function ReportList() {
                    animate="visible"
                    className="divide-y divide-gray-200 dark:divide-gray-700"
                  >
-                   {filteredReports.map((report, index) => {
+                   {filteredReports.map((report) => {
                      const status = getStatusBadge(report.status);
                      return (
                        <motion.tr 
@@ -1004,9 +1003,11 @@ export default function ReportList() {
                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Bukti Foto</h3>
                    <div className="bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-600 overflow-hidden">
                      {selectedReport.photo_url ? (
-                       <img
+                       <Image
                          src={selectedReport.photo_url}
                          alt={`Laporan #${selectedReport.id}`}
+                         width={800}
+                         height={300}
                          className="w-full object-contain max-h-[300px]"
                        />
                      ) : (

@@ -32,6 +32,17 @@ interface LoginResponse {
   message: string;
 }
 
+interface UserData {
+  id?: number;
+  name?: string;
+  email?: string;
+  role?: string;
+  nik?: string;
+  no_telp?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Fungsi untuk memeriksa apakah token kedaluwarsa
 export function isTokenExpired(): boolean {
   if (typeof window === 'undefined') return true;
@@ -150,7 +161,7 @@ export function storeAuthData(loginResponse: LoginResponse): void {
 }
 
 // Fungsi untuk menyimpan data pengguna
-export function storeUserData(userData: any): void {
+export function storeUserData(userData: UserData): void {
   if (typeof window === 'undefined') return;
   
   localStorage.setItem("user_data", JSON.stringify(userData));
@@ -165,7 +176,7 @@ export function storeUserData(userData: any): void {
 }
 
 // Fungsi untuk mendapatkan data pengguna
-export function getUserData(): any {
+export function getUserData(): UserData | null {
   if (typeof window === 'undefined') return null;
   
   const userData = localStorage.getItem("user_data");
@@ -267,13 +278,13 @@ export async function authenticatedFetch(
 }
 
 // Fungsi utility untuk handle API errors
-export function handleApiError(error: any): string {
+export function handleApiError(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
   
-  if (typeof error === 'object' && error?.message) {
-    return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message: unknown }).message);
   }
   
   return "Terjadi kesalahan yang tidak terduga";

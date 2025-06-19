@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const weekOffset = searchParams.get('week_offset') || '0';
     
-    let queryParams = new URLSearchParams();
+    const queryParams = new URLSearchParams();
     if (weekOffset !== '0') {
       queryParams.append('week_offset', weekOffset);
     }

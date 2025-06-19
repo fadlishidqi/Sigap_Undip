@@ -3,7 +3,7 @@
 import type React from "react"
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps, toast as sonnerToast } from "sonner"
-import { CheckCircle, XCircle, AlertTriangle, Info, Loader2, Clock } from "lucide-react"
+import { CheckCircle, XCircle, AlertTriangle, Info, Loader2 } from "lucide-react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
@@ -121,11 +121,26 @@ const Toaster = ({ ...props }: ToasterProps) => {
   )
 }
 
+interface ToastOptions {
+  duration?: number;
+  icon?: React.ReactNode;
+  className?: string;
+  description?: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  cancel?: {
+    label: string;
+    onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  };
+}
+
 // Enhanced toast functions with better icons and styling
 const toast = {
   ...sonnerToast,
   
-  success: (message: string, options?: any) => {
+  success: (message: string, options?: ToastOptions) => {
     return sonnerToast.success(message, {
       duration: 4500,
       icon: <CheckCircle className="h-6 w-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0 drop-shadow-sm" />,
@@ -134,7 +149,7 @@ const toast = {
     })
   },
   
-  error: (message: string, options?: any) => {
+  error: (message: string, options?: ToastOptions) => {
     return sonnerToast.error(message, {
       duration: 6000,
       icon: <XCircle className="h-6 w-6 text-red-600 dark:text-red-400 flex-shrink-0 drop-shadow-sm" />,
@@ -143,7 +158,7 @@ const toast = {
     })
   },
   
-  warning: (message: string, options?: any) => {
+  warning: (message: string, options?: ToastOptions) => {
     return sonnerToast.warning(message, {
       duration: 5000,
       icon: <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400 flex-shrink-0 drop-shadow-sm" />,
@@ -152,7 +167,7 @@ const toast = {
     })
   },
   
-  info: (message: string, options?: any) => {
+  info: (message: string, options?: ToastOptions) => {
     return sonnerToast.info(message, {
       duration: 4500,
       icon: <Info className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 drop-shadow-sm" />,
@@ -161,7 +176,7 @@ const toast = {
     })
   },
   
-  loading: (message: string, options?: any) => {
+  loading: (message: string, options?: ToastOptions) => {
     return sonnerToast.loading(message, {
       duration: Infinity,
       icon: <Loader2 className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 animate-spin drop-shadow-sm" />,
@@ -176,7 +191,7 @@ const toast = {
     options: {
       loading: string
       success: (data: T) => string
-      error: (err: any) => string
+      error: (err: Error) => string
       description?: string
       loadingDescription?: string
       successDescription?: string
@@ -208,15 +223,7 @@ const toast = {
           )}
         </div>
       ),
-      icon: {
-        loading: <Loader2 className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 animate-spin drop-shadow-sm" />,
-        success: <CheckCircle className="h-6 w-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0 drop-shadow-sm" />,
-        error: <XCircle className="h-6 w-6 text-red-600 dark:text-red-400 flex-shrink-0 drop-shadow-sm" />,
-      },
-      durations: {
-        success: 4500,
-        error: 6000,
-      }
+      duration: 4500
     })
   },
 
@@ -252,7 +259,7 @@ const toast = {
       cancel: options.cancel
         ? {
             label: options.cancel.label,
-            onClick: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+            onClick: () => {
               if (options.cancel?.onClick) {
                 options.cancel.onClick();
               }
@@ -319,7 +326,7 @@ const toast = {
       cancel: options.cancel
         ? {
             label: options.cancel.label,
-            onClick: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+            onClick: () => {
               if (options.cancel?.onClick) {
                 options.cancel.onClick();
               }

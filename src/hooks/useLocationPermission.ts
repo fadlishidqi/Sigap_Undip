@@ -9,6 +9,38 @@ interface LocationData {
   accuracy?: number;
 }
 
+interface GeolocationError {
+  code: number;
+  message: string;
+}
+
+interface DebugInfo {
+  geolocationSupported?: boolean;
+  permissionsAPI?: boolean;
+  permissionState?: string;
+  permissionError?: unknown;
+  checkPermissionError?: unknown;
+  lastError?: {
+    code?: number;
+    message?: string;
+    timestamp: string;
+    errorObject: unknown;
+  };
+  lastSuccessfulLocation?: LocationData & {
+    timestamp: string;
+  };
+  browserInfo?: {
+    userAgent: string;
+    platform: string;
+    cookieEnabled: boolean;
+    onLine: boolean;
+    language: string;
+    isHTTPS: boolean;
+    hostname: string;
+    timestamp: string;
+  };
+}
+
 interface UseLocationPermissionReturn {
   location: LocationData | null;
   isLoading: boolean;
@@ -16,7 +48,7 @@ interface UseLocationPermissionReturn {
   hasPermission: boolean;
   requestPermission: () => Promise<boolean>;
   getCurrentLocation: () => Promise<LocationData | null>;
-  debugInfo: any;
+  debugInfo: DebugInfo;
 }
 
 export function useLocationPermission(): UseLocationPermissionReturn {
@@ -24,7 +56,7 @@ export function useLocationPermission(): UseLocationPermissionReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<any>({});
+  const [debugInfo, setDebugInfo] = useState<DebugInfo>({});
 
   // Use ref to prevent infinite loops and multiple requests
   const isRequestingRef = useRef(false);
@@ -34,11 +66,11 @@ export function useLocationPermission(): UseLocationPermissionReturn {
   const isGeolocationSupported = typeof window !== 'undefined' && 'geolocation' in navigator;
 
   // Enhanced error handling function
-  const handleGeolocationError = useCallback((error: any): string => {
+  const handleGeolocationError = useCallback((error: GeolocationError | unknown): string => {
     console.log("Raw geolocation error object:", error);
     console.log("Error properties:", {
-      code: error?.code,
-      message: error?.message,
+      code: (error as GeolocationError)?.code,
+      message: (error as GeolocationError)?.message,
       type: typeof error,
       keys: Object.keys(error || {}),
     });
@@ -47,8 +79,8 @@ export function useLocationPermission(): UseLocationPermissionReturn {
     setDebugInfo(prev => ({
       ...prev,
       lastError: {
-        code: error?.code,
-        message: error?.message,
+        code: (error as GeolocationError)?.code,
+        message: (error as GeolocationError)?.message,
         timestamp: new Date().toISOString(),
         errorObject: error,
       }
@@ -59,8 +91,9 @@ export function useLocationPermission(): UseLocationPermissionReturn {
     }
 
     // Handle different error types
-    if (typeof error === 'object' && error.code !== undefined) {
-      switch (error.code) {
+    if (typeof error === 'object' && (error as GeolocationError).code !== undefined) {
+      const geolocationError = error as GeolocationError;
+      switch (geolocationError.code) {
         case 1: // PERMISSION_DENIED
           setHasPermission(false);
           return "Akses lokasi ditolak. Klik ikon lokasi di browser dan pilih 'Izinkan', lalu refresh halaman.";
@@ -69,7 +102,7 @@ export function useLocationPermission(): UseLocationPermissionReturn {
         case 3: // TIMEOUT
           return "Waktu habis saat mengakses lokasi. Coba lagi.";
         default:
-          return `Error geolocation dengan kode ${error.code}: ${error.message || 'Tidak diketahui'}`;
+          return `Error geolocation dengan kode ${geolocationError.code}: ${geolocationError.message || 'Tidak diketahui'}`;
       }
     }
 

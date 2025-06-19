@@ -1,5 +1,38 @@
-// src/app/api/user/reports/route.ts
 import { NextRequest, NextResponse } from "next/server";
+
+// Define the minimum type for a report based on expected usage
+type Report = {
+  status?: string;
+  problem_type?: string;
+  [key: string]: unknown;
+};
+
+// Define type for paginated response
+type PaginatedResponse = {
+  data: Report[];
+  current_page?: number;
+  last_page?: number;
+  per_page?: number;
+  total?: number;
+  from?: number;
+  to?: number;
+  first_page_url?: string;
+  last_page_url?: string;
+  next_page_url?: string | null;
+  prev_page_url?: string | null;
+  path?: string;
+  links?: Array<{
+    url: string | null;
+    label: string;
+    active: boolean;
+  }>;
+};
+
+// Define type for reports response that might have reports array
+type ReportsResponse = {
+  reports?: Report[];
+  report?: Report;
+} & Record<string, unknown>;
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +69,7 @@ export async function GET(request: NextRequest) {
     console.log("External API reports response:", responseText);
     
     // Try to parse as JSON
-    let data;
+    let data: unknown;
     try {
       data = JSON.parse(responseText);
     } catch (e) {
@@ -53,41 +86,42 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform data untuk user reports
-    let reports = [];
-    let paginationData = null;
+    let reports: Report[] = [];
+    let paginationData: Omit<PaginatedResponse, 'data'> | null = null;
 
     // Handle different response structures
     if (Array.isArray(data)) {
-      reports = data;
-    } else if (data.data && Array.isArray(data.data)) {
-      reports = data.data;
+      reports = data as Report[];
+    } else if (typeof data === "object" && data !== null && "data" in data && Array.isArray((data as PaginatedResponse).data)) {
+      const paginatedData = data as PaginatedResponse;
+      reports = paginatedData.data;
       paginationData = {
-        current_page: data.current_page || 1,
-        last_page: data.last_page || 1,
-        per_page: data.per_page || 10,
-        total: data.total || reports.length,
-        from: data.from || 1,
-        to: data.to || reports.length,
-        first_page_url: data.first_page_url || '',
-        last_page_url: data.last_page_url || '',
-        next_page_url: data.next_page_url || null,
-        prev_page_url: data.prev_page_url || null,
-        path: data.path || '',
-        links: data.links || []
+        current_page: paginatedData.current_page ?? 1,
+        last_page: paginatedData.last_page ?? 1,
+        per_page: paginatedData.per_page ?? 10,
+        total: paginatedData.total ?? reports.length,
+        from: paginatedData.from ?? 1,
+        to: paginatedData.to ?? reports.length,
+        first_page_url: paginatedData.first_page_url ?? '',
+        last_page_url: paginatedData.last_page_url ?? '',
+        next_page_url: paginatedData.next_page_url ?? null,
+        prev_page_url: paginatedData.prev_page_url ?? null,
+        path: paginatedData.path ?? '',
+        links: paginatedData.links ?? []
       };
-    } else if (data.reports && Array.isArray(data.reports)) {
-      reports = data.reports;
-    } else if (data.report) {
-      reports = [data.report];
+    } else if (typeof data === "object" && data !== null && "reports" in data && Array.isArray((data as ReportsResponse).reports)) {
+      reports = (data as ReportsResponse).reports || [];
+    } else if (typeof data === "object" && data !== null && "report" in data) {
+      reports = [(data as ReportsResponse).report as Report];
     }
 
     // Filter berdasarkan status dan problem_type jika diperlukan (client-side filtering)
     if (status && status !== '') {
-      reports = reports.filter((report: any) => report.status === status);
+      reports = reports.filter((report) => report.status === status);
     }
     
     if (problem_type && problem_type !== '') {
-      reports = reports.filter((report: any) => report.problem_type === problem_type);
+      reports = reports.filter((report) => report.problem_type === problem_type);
     }
 
     // Create pagination response structure

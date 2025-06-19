@@ -1,7 +1,7 @@
 // src/components/PanicButtonTerms.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Check, AlertTriangle, X, Clock } from "lucide-react";
+import { Shield, AlertTriangle, X, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -122,7 +122,7 @@ const PanicButtonTerms: React.FC<PanicButtonTermsProps> = ({ isOpen, onAccept, o
                         Konsekuensi Hukum
                       </h3>
                       <p className="text-sm ml-8">
-                        Penyalahgunaan dapat dikenakan sanksi berupa peringatan, skorsing dari universitas, hingga tuntutan pidana berdasarkan UU ITE dengan ancaman pidana penjara hingga 6 tahun dan/atau denda hingga Rp1 miliar.
+                        Penyalahgunaan dapat dikenakan sanksi berupa peringatan, skorsing dari universitas, hingga tuntutan pidana berdasarkan UU ITE dengan ancaman pidana penjara hingga 6 tahun dan denda.
                       </p>
                     </div>
 
@@ -132,7 +132,7 @@ const PanicButtonTerms: React.FC<PanicButtonTermsProps> = ({ isOpen, onAccept, o
                         Persetujuan Pengguna
                       </h3>
                       <p className="text-sm ml-8">
-                        Dengan menggunakan tombol darurat, pengguna menyatakan telah memahami seluruh ketentuan, konsekuensi penyalahgunaan, dan bersedia memberikan izin penggunaan data lokasi yang diperlukan untuk respons darurat.
+                        Dengan menggunakan tombol darurat, pengguna menyatakan telah memahami seluruh ketentuan, konsekuensi penyalahgunaan, dan bersedia memberikan izin penggunaan data lokasi yang diperlukan.
                       </p>
                     </div>
                   </div>

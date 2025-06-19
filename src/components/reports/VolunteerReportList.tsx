@@ -1,11 +1,10 @@
 // src/components/reports/VolunteerReportList.tsx
 "use client";
 
-import { useState, useEffect, MouseEvent } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { 
   RefreshCw, 
-  Filter, 
   Search, 
   Loader2, 
   FileText, 
@@ -13,19 +12,15 @@ import {
   CheckCircle, 
   AlertCircle, 
   XCircle,
-  User,
   MapPin,
   Info,
   X,
-  ExternalLink,
   ChevronDown,
   ChevronUp,
   MoreHorizontal,
-  Calendar,
   SlidersHorizontal,
   Edit,
   Save,
-  Eye,
   Menu
 } from "lucide-react";
 import { getAccessToken } from "@/lib/auth";
@@ -44,7 +39,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import Image from "next/image";
 
 // Definisikan interface untuk laporan dan pengguna
 interface ReportUser {
@@ -441,7 +437,7 @@ export default function VolunteerReportList() {
     }
   };
 
-  function handleRefresh(event: MouseEvent<HTMLButtonElement>): void {
+  function handleRefresh(): void {
     setIsRefreshing(true);
     fetchReports();
   }
@@ -980,9 +976,11 @@ export default function VolunteerReportList() {
                      <h3 className="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">Bukti Foto</h3>
                      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
                        {selectedReport.photo_url ? (
-                         <img
+                         <Image
                            src={selectedReport.photo_url}
                            alt={`Laporan #${selectedReport.id}`}
+                           width={800}
+                           height={300}
                            className="w-full object-contain max-h-[300px] sm:max-h-[400px]"
                          />
                        ) : (

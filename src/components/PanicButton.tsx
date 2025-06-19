@@ -83,10 +83,9 @@ const PanicButton: React.FC = () => {
 
   const sendPanicAlert = useCallback(async (): Promise<void> => {
     // Prevent multiple sends
-    if (isSendingRef.current || isSendingAlert) {
+    if (isSendingRef.current) {
       return;
     }
-
     isSendingRef.current = true;
     setIsSendingAlert(true);
     

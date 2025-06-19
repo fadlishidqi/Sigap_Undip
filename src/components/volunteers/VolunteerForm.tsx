@@ -139,8 +139,14 @@ export default function VolunteerForm({
       
       if (mode === "create") {
         const createData = data as CreateVolunteerFormValues;
-        // Remove confirmPassword before sending to API
-        const { confirmPassword, ...apiData } = createData;
+        // Create API data object without confirmPassword
+        const apiData = {
+          name: createData.name,
+          email: createData.email,
+          nik: createData.nik,
+          no_telp: createData.no_telp,
+          password: createData.password
+        };
         
         console.log("Submitting volunteer data:", { ...apiData, password: "[HIDDEN]" });
         

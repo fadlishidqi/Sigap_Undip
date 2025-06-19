@@ -1,4 +1,3 @@
-// src/app/volunteer/dashboard/page.tsx
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
@@ -14,12 +13,8 @@ import {
   XCircle,
   TrendingUp,
   Activity,
-  Bell,
   RefreshCw,
-  MapPin,
-  User,
-  Coffee,
-  Briefcase
+  Coffee
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -31,7 +26,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
@@ -94,12 +88,10 @@ interface VolunteerDashboardData {
 }
 
 export default function VolunteerDashboard() {
-  const [role, setRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const [isTabVisible, setIsTabVisible] = useState(true);
   
   // Dashboard data state
   const [dashboardData, setDashboardData] = useState<VolunteerDashboardData>({
@@ -124,62 +116,187 @@ export default function VolunteerDashboard() {
   
   const router = useRouter();
 
-  useEffect(() => {
-    setIsClient(true);
-    const userRole = getUserRole();
-    const userData = getUserData();
-    setRole(userRole);
+  const generateTodayPanicAlerts = useCallback(() => {
+    const alerts = [];
+    const alertCount = Math.floor(Math.random() * 3); // 0-2 alerts
     
-    if (userRole === "admin") {
-      router.push("/admin/dashboard");
-      return;
-    }
-    
-    if (userRole === "user") {
-      router.push("/student/emergency");
-      return;
-    }
-    
-    if (userData && !sessionStorage.getItem("volunteer_welcome_toast_shown")) {
-      toast.success(`Selamat datang, ${userData.name}!`, {
-        description: "Semangat bertugas sebagai relawan SIGAP",
-        duration: 5000,
+    for (let i = 0; i < alertCount; i++) {
+      const hoursAgo = Math.floor(Math.random() * 8) + 1;
+      const alertTime = new Date();
+      alertTime.setHours(alertTime.getHours() - hoursAgo);
+      
+      alerts.push({
+        id: Math.floor(Math.random() * 1000) + 1,
+        status: Math.random() > 0.5 ? 'pending' : 'handled',
+        created_at: alertTime.toISOString(),
+        user: {
+          name: `Mahasiswa ${Math.floor(Math.random() * 100) + 1}`
+        }
       });
-      sessionStorage.setItem("volunteer_welcome_toast_shown", "true");
     }
     
-    // Initial data fetch
-    fetchVolunteerDashboardData(false);
-    
-    // Setup visibility change handler - hanya untuk update UI state, bukan untuk auto-refresh
-    const handleVisibilityChange = () => {
-      setIsTabVisible(!document.hidden);
-      console.log(`🔄 Tab visibility changed: ${!document.hidden ? 'visible' : 'hidden'}`);
-    };
+    return alerts;
+  }, []);
 
-    // Setup auto-refresh yang berjalan terus tanpa tergantung tab visibility
-    refreshIntervalRef.current = setInterval(() => {
-      console.log("🔄 Volunteer auto-refresh triggered (30s interval)");
-      fetchVolunteerDashboardData(true);
-    }, 30000); // Ubah ke 30 detik untuk relawan
+  const generateTodayReports = useCallback(() => {
+    const reports = [];
+    const reportCount = Math.floor(Math.random() * 4) + 1; // 1-4 reports
+    const problemTypes = ['electrical', 'tree', 'stairs', 'door', 'infrastructure'];
     
-    // Listen untuk visibility change hanya untuk UI indicator
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    for (let i = 0; i < reportCount; i++) {
+      const hoursAgo = Math.floor(Math.random() * 10) + 1;
+      const reportTime = new Date();
+      reportTime.setHours(reportTime.getHours() - hoursAgo);
+      
+      reports.push({
+        id: Math.floor(Math.random() * 1000) + 1,
+        status: Math.random() > 0.7 ? 'resolved' : 'pending',
+        problem_type: problemTypes[Math.floor(Math.random() * problemTypes.length)],
+        created_at: reportTime.toISOString(),
+        user: {
+          name: `Mahasiswa ${Math.floor(Math.random() * 100) + 1}`
+        }
+      });
+    }
     
-    setLastRefresh(new Date());
+    return reports;
+  }, []);
+
+  const generateUpcomingShifts = useCallback(() => {
+    const shifts = [];
+    const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
     
-    // Cleanup
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-        refreshIntervalRef.current = null;
-        console.log("🔄 Auto-refresh cleaned up");
-      }
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    for (let i = 1; i <= 3; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      
+      shifts.push({
+        date: date.toISOString(),
+        day_name: days[date.getDay()],
+        shift_id: Math.random() > 0.5 ? Math.floor(Math.random() * 100) + 1 : undefined,
+        shift_type: Math.random() > 0.5 ? 'actual' : 'pattern' as 'actual' | 'pattern'
+      });
+    }
+    
+    return shifts;
+  }, []);
+
+  const formatProblemType = useCallback((type: string) => {
+    const typeMap: { [key: string]: string } = {
+      "electrical": "Masalah Listrik",
+      "electricity": "Masalah Listrik",
+      "tree": "Bahaya Pohon",
+      "stairs": "Masalah Tangga",
+      "elevator": "Masalah Lift",
+      "door": "Masalah Pintu",
+      "infrastructure": "Infrastruktur",
+      "water_supply": "Pasokan Air",
+      "waste_management": "Pengelolaan Sampah",
+      "public_safety": "Keselamatan Umum",
+      "public_health": "Kesehatan Umum",
+      "environmental": "Lingkungan",
+      "other": "Lainnya"
     };
+    
+    return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }, []);
+
+  const generateActivitiesFromTodayData = useCallback((data: VolunteerDashboardData): VolunteerActivity[] => {
+    const activities: VolunteerActivity[] = [];
+
+    // Tambah aktivitas dari panic alerts hari ini
+    data.todayPanicAlerts.forEach((panic) => {
+      const activityType = panic.status === 'handled' ? 'panic_handled' : 'panic_new';
+      const title = panic.status === 'handled' ? 'Panic Alert Ditangani' : 'Panic Alert Baru';
+      const description = panic.status === 'handled'
+        ? `Alert darurat dari ${panic.user.name} telah ditangani`
+        : `Alert darurat baru dari ${panic.user.name}`;
+
+      activities.push({
+        id: `panic_${panic.id}_${Date.now()}`,
+        type: activityType,
+        title: title,
+        description: description,
+        timestamp: panic.created_at,
+        metadata: { panicId: panic.id }
+      });
+    });
+
+    // Tambah aktivitas dari laporan hari ini
+    data.todayReports.forEach((report) => {
+      const activityType = report.status === 'resolved' ? 'report_handled' : 'report_new';
+      const title = report.status === 'resolved' ? 'Laporan Diselesaikan' : 'Laporan Baru Masuk';
+      const description = report.status === 'resolved'
+        ? `Laporan ${formatProblemType(report.problem_type)} telah diselesaikan`
+        : `Laporan baru: ${formatProblemType(report.problem_type)} dari ${report.user.name}`;
+
+      activities.push({
+        id: `report_${report.id}_${Date.now()}`,
+        type: activityType,
+        title: title,
+        description: description,
+        timestamp: report.created_at,
+        metadata: { reportId: report.id }
+      });
+    });
+
+    // Sort berdasarkan timestamp dan ambil 5 terbaru
+    return activities
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 5);
+  }, [formatProblemType]);
+
+  const checkForNewAlertsAndReports = useCallback((
+    previousData: VolunteerDashboardData, 
+    newData: VolunteerDashboardData, 
+    isAutoRefresh: boolean
+  ) => {
+    // Check for new panic alerts
+    const newPanics = newData.todayPanicAlerts.filter(newPanic => 
+      !previousData.todayPanicAlerts.some(oldPanic => oldPanic.id === newPanic.id)
+    );
+
+    // Check for new reports
+    const newReports = newData.todayReports.filter(newReport => 
+      !previousData.todayReports.some(oldReport => oldReport.id === newReport.id)
+    );
+
+    // Show red toast for new panic alerts
+    if (newPanics.length > 0) {
+      const refreshType = isAutoRefresh ? "Auto-refresh" : "Manual refresh";
+      toast.error(`${newPanics.length} Panic Alert Baru!`, {
+        description: `${refreshType}: ${newPanics.length} panic alert darurat memerlukan respon segera`,
+        duration: 7000,
+        action: {
+          label: "Tangani",
+          onClick: () => router.push("/volunteer/panic-reports")
+        }
+      });
+    }
+
+    // Show green toast for new reports
+    if (newReports.length > 0) {
+      const refreshType = isAutoRefresh ? "Auto-refresh" : "Manual refresh";
+      toast.success(`${newReports.length} Laporan Baru Masuk!`, {
+        description: `${refreshType}: ${newReports.length} laporan baru memerlukan perhatian`,
+        duration: 5000,
+        action: {
+          label: "Lihat",
+          onClick: () => router.push("/volunteer/reports")
+        }
+      });
+    }
+
+    // Show info toast saat manual refresh jika tidak ada data baru
+    if (!isAutoRefresh && newPanics.length === 0 && newReports.length === 0) {
+      toast.info("Data Sudah Terbaru", {
+        description: "Tidak ada panic alert atau laporan baru saat ini",
+        duration: 3000,
+      });
+    }
   }, [router]);
 
-  const fetchVolunteerDashboardData = async (silentRefresh: boolean = false) => {
+  const fetchVolunteerDashboardData = useCallback(async (silentRefresh: boolean = false) => {
     try {
       if (!silentRefresh) {
         setIsRefreshing(true);
@@ -231,7 +348,7 @@ export default function VolunteerDashboard() {
             newData.stats.onDutyThisWeek = shiftsData.summary.total_scheduled_days || 0;
           }
         }
-      } catch (error) {
+      } catch {
         console.log("My shifts API not available, using mock data");
       }
 
@@ -251,7 +368,7 @@ export default function VolunteerDashboard() {
             newData.stats.panicAlertsToday = panicData.data.length;
           }
         }
-      } catch (error) {
+      } catch {
         console.log("Today panic reports API not available, using mock data");
       }
 
@@ -278,18 +395,18 @@ export default function VolunteerDashboard() {
           
           // Filter laporan hari ini
           const today = new Date().toDateString();
-          newData.todayReports = reports.filter((report: any) => 
+          newData.todayReports = reports.filter((report: { created_at: string }) => 
             new Date(report.created_at).toDateString() === today
           ).slice(0, 5);
         }
-      } catch (error) {
+      } catch {
         console.log("Reports API not available, using mock data");
       }
 
       // Generate recent activities dari data panic dan laporan hari ini
       newData.recentActivities = generateActivitiesFromTodayData(newData);
 
-      // Check for new alerts dan tampilkan notifikasi - UPDATED: check both for auto and manual refresh
+      // Check for new alerts dan tampilkan notifikasi
       if (previousDataRef.current) {
         checkForNewAlertsAndReports(previousDataRef.current, newData, silentRefresh);
       }
@@ -314,192 +431,54 @@ export default function VolunteerDashboard() {
         setIsRefreshing(false);
       }
     }
-  };
+  }, [checkForNewAlertsAndReports, generateActivitiesFromTodayData, generateTodayPanicAlerts, generateTodayReports, generateUpcomingShifts]);
 
-  // Generate today panic alerts (mock data)
-  const generateTodayPanicAlerts = () => {
-    const alerts = [];
-    const alertCount = Math.floor(Math.random() * 3); // 0-2 alerts
+  useEffect(() => {
+    setIsClient(true);
+    const userRole = getUserRole();
+    const userData = getUserData();
     
-    for (let i = 0; i < alertCount; i++) {
-      const hoursAgo = Math.floor(Math.random() * 8) + 1;
-      const alertTime = new Date();
-      alertTime.setHours(alertTime.getHours() - hoursAgo);
-      
-      alerts.push({
-        id: Math.floor(Math.random() * 1000) + 1,
-        status: Math.random() > 0.5 ? 'pending' : 'handled',
-        created_at: alertTime.toISOString(),
-        user: {
-          name: `Mahasiswa ${Math.floor(Math.random() * 100) + 1}`
-        }
-      });
+    if (userRole === "admin") {
+      router.push("/admin/dashboard");
+      return;
     }
     
-    return alerts;
-  };
-
-  // Generate today reports (mock data)
-  const generateTodayReports = () => {
-    const reports = [];
-    const reportCount = Math.floor(Math.random() * 4) + 1; // 1-4 reports
-    const problemTypes = ['electrical', 'tree', 'stairs', 'door', 'infrastructure'];
-    
-    for (let i = 0; i < reportCount; i++) {
-      const hoursAgo = Math.floor(Math.random() * 10) + 1;
-      const reportTime = new Date();
-      reportTime.setHours(reportTime.getHours() - hoursAgo);
-      
-      reports.push({
-        id: Math.floor(Math.random() * 1000) + 1,
-        status: Math.random() > 0.7 ? 'resolved' : 'pending',
-        problem_type: problemTypes[Math.floor(Math.random() * problemTypes.length)],
-        created_at: reportTime.toISOString(),
-        user: {
-          name: `Mahasiswa ${Math.floor(Math.random() * 100) + 1}`
-        }
-      });
+    if (userRole === "user") {
+      router.push("/student/emergency");
+      return;
     }
     
-    return reports;
-  };
-
-  // Generate upcoming shifts
-  const generateUpcomingShifts = () => {
-    const shifts = [];
-    const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-    
-    for (let i = 1; i <= 3; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() + i);
-      
-      shifts.push({
-        date: date.toISOString(),
-        day_name: days[date.getDay()],
-        shift_id: Math.random() > 0.5 ? Math.floor(Math.random() * 100) + 1 : undefined,
-        shift_type: Math.random() > 0.5 ? 'actual' : 'pattern' as 'actual' | 'pattern'
-      });
-    }
-    
-    return shifts;
-  };
-
-  // Generate activities dari data hari ini
-  const generateActivitiesFromTodayData = (data: VolunteerDashboardData): VolunteerActivity[] => {
-    const activities: VolunteerActivity[] = [];
-
-    // Tambah aktivitas dari panic alerts hari ini
-    data.todayPanicAlerts.forEach((panic) => {
-      const activityType = panic.status === 'handled' ? 'panic_handled' : 'panic_new';
-      const title = panic.status === 'handled' ? 'Panic Alert Ditangani' : 'Panic Alert Baru';
-      const description = panic.status === 'handled'
-        ? `Alert darurat dari ${panic.user.name} telah ditangani`
-        : `Alert darurat baru dari ${panic.user.name}`;
-
-      activities.push({
-        id: `panic_${panic.id}_${Date.now()}`,
-        type: activityType,
-        title: title,
-        description: description,
-        timestamp: panic.created_at,
-        metadata: { panicId: panic.id }
-      });
-    });
-
-    // Tambah aktivitas dari laporan hari ini
-    data.todayReports.forEach((report) => {
-      const activityType = report.status === 'resolved' ? 'report_handled' : 'report_new';
-      const title = report.status === 'resolved' ? 'Laporan Diselesaikan' : 'Laporan Baru Masuk';
-      const description = report.status === 'resolved'
-        ? `Laporan ${formatProblemType(report.problem_type)} telah diselesaikan`
-        : `Laporan baru: ${formatProblemType(report.problem_type)} dari ${report.user.name}`;
-
-      activities.push({
-        id: `report_${report.id}_${Date.now()}`,
-        type: activityType,
-        title: title,
-        description: description,
-        timestamp: report.created_at,
-        metadata: { reportId: report.id }
-      });
-    });
-
-    // Sort berdasarkan timestamp dan ambil 5 terbaru
-    return activities
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 5);
-  };
-
-  // Check for new alerts and reports - UPDATED: tambah parameter untuk tipe refresh
-  const checkForNewAlertsAndReports = useCallback((previousData: VolunteerDashboardData, newData: VolunteerDashboardData, isAutoRefresh: boolean) => {
-    // Check for new panic alerts
-    const newPanics = newData.todayPanicAlerts.filter(newPanic => 
-      !previousData.todayPanicAlerts.some(oldPanic => oldPanic.id === newPanic.id)
-    );
-
-    // Check for new reports
-    const newReports = newData.todayReports.filter(newReport => 
-      !previousData.todayReports.some(oldReport => oldReport.id === newReport.id)
-    );
-
-    // Show red toast for new panic alerts - UPDATED: show untuk auto dan manual refresh
-    if (newPanics.length > 0) {
-      const refreshType = isAutoRefresh ? "Auto-refresh" : "Manual refresh";
-      toast.error(`${newPanics.length} Panic Alert Baru!`, {
-        description: `${refreshType}: ${newPanics.length} panic alert darurat memerlukan respon segera`,
-        duration: 7000,
-        action: {
-          label: "Tangani",
-          onClick: () => router.push("/volunteer/panic-reports")
-        }
-      });
-    }
-
-    // Show green toast for new reports - UPDATED: show untuk auto dan manual refresh
-    if (newReports.length > 0) {
-      const refreshType = isAutoRefresh ? "Auto-refresh" : "Manual refresh";
-      toast.success(`${newReports.length} Laporan Baru Masuk!`, {
-        description: `${refreshType}: ${newReports.length} laporan baru memerlukan perhatian`,
+    if (userData && !sessionStorage.getItem("volunteer_welcome_toast_shown")) {
+      toast.success(`Selamat datang, ${userData.name}!`, {
+        description: "Semangat bertugas sebagai relawan SIGAP",
         duration: 5000,
-        action: {
-          label: "Lihat",
-          onClick: () => router.push("/volunteer/reports")
-        }
       });
+      sessionStorage.setItem("volunteer_welcome_toast_shown", "true");
     }
-
-    // Show info toast saat manual refresh jika tidak ada data baru
-    if (!isAutoRefresh && newPanics.length === 0 && newReports.length === 0) {
-      toast.info("Data Sudah Terbaru", {
-        description: "Tidak ada panic alert atau laporan baru saat ini",
-        duration: 3000,
-      });
-    }
-  }, [router]);
-
-  // Helper function untuk format problem type
-  const formatProblemType = (type: string) => {
-    const typeMap: { [key: string]: string } = {
-      "electrical": "Masalah Listrik",
-      "electricity": "Masalah Listrik",
-      "tree": "Bahaya Pohon",
-      "stairs": "Masalah Tangga",
-      "elevator": "Masalah Lift",
-      "door": "Masalah Pintu",
-      "infrastructure": "Infrastruktur",
-      "water_supply": "Pasokan Air",
-      "waste_management": "Pengelolaan Sampah",
-      "public_safety": "Keselamatan Umum",
-      "public_health": "Kesehatan Umum",
-      "environmental": "Lingkungan",
-      "other": "Lainnya"
-    };
     
-    return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
+    // Initial data fetch
+    fetchVolunteerDashboardData(false);
+    
+    // Setup auto-refresh yang berjalan terus tanpa tergantung tab visibility
+    refreshIntervalRef.current = setInterval(() => {
+      console.log("🔄 Volunteer auto-refresh triggered (30s interval)");
+      fetchVolunteerDashboardData(true);
+    }, 30000); // Ubah ke 30 detik untuk relawan
+    
+    setLastRefresh(new Date());
+    
+    // Cleanup
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+        console.log("🔄 Auto-refresh cleaned up");
+      }
+    };
+  }, [router, fetchVolunteerDashboardData]);
 
   // Helper functions
-  const formatTimeAgo = (date: string) => {
+  const formatTimeAgo = useCallback((date: string) => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000);
     
@@ -507,9 +486,9 @@ export default function VolunteerDashboard() {
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit yang lalu`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam yang lalu`;
     return `${Math.floor(diffInSeconds / 86400)} hari yang lalu`;
-  };
+  }, []);
 
-  const getActivityIcon = (type: VolunteerActivity['type']) => {
+  const getActivityIcon = useCallback((type: VolunteerActivity['type']) => {
     switch (type) {
       case 'panic_new':
         return <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />;
@@ -522,9 +501,9 @@ export default function VolunteerDashboard() {
       default:
         return <Activity className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
     }
-  };
+  }, []);
 
-  const getActivityColor = (type: VolunteerActivity['type']) => {
+  const getActivityColor = useCallback((type: VolunteerActivity['type']) => {
     switch (type) {
       case 'panic_new':
         return 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800';
@@ -537,9 +516,9 @@ export default function VolunteerDashboard() {
       default:
         return 'bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-800';
     }
-  };
+  }, []);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('id-ID', {
       weekday: 'long',
@@ -547,7 +526,7 @@ export default function VolunteerDashboard() {
       month: 'long',
       day: 'numeric',
     }).format(date);
-  };
+  }, []);
 
   if (!isClient) {
     return null;
@@ -602,7 +581,7 @@ export default function VolunteerDashboard() {
             <Button
               onClick={() => {
                 setIsRefreshing(true);
-                fetchVolunteerDashboardData(false); // Manual refresh dengan parameter false
+                fetchVolunteerDashboardData(false);
               }}
               variant="outline"
               className="border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 w-full sm:w-auto transition-theme"

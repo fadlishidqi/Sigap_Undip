@@ -1,4 +1,3 @@
-// src/app/auth/login/page.tsx
 "use client"
 
 import { useState } from "react"
@@ -6,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Eye, EyeOff, Loader2, Shield, Mail, Lock, LogIn, AlertCircle, InfoIcon } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Mail, Lock, LogIn, AlertCircle, Info } from 'lucide-react'
 import { toast } from "sonner"
 import Link from "next/link"
 import Image from "next/image"
@@ -27,7 +26,6 @@ export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [shakeError, setShakeError] = useState("")
   const [error, setError] = useState<string | null>(null)
 
   const form = useForm<LoginFormValues>({
@@ -39,67 +37,67 @@ export default function LoginPage() {
   })
 
   const onSubmit = async (data: LoginFormValues) => {
-  setIsLoading(true);
-  setError(null);
+    setIsLoading(true);
+    setError(null);
 
-  try {
-    const response = await fetch("/api/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: data.email,
-        password: data.password,
-      }),
-    });
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (!response.ok) {
-      throw new Error(result.message || "Gagal masuk");
-    }
-
-    // Save tokens
-    localStorage.setItem("access_token", result.access_token);
-    localStorage.setItem("refresh_token", result.refresh_token);
-    
-    const expiresAt = Date.now() + result.expires_in * 1000;
-    localStorage.setItem("expires_at", expiresAt.toString());
-
-    if (result.user) {
-      if (result.user.role) {
-        localStorage.setItem("user_role", result.user.role);
+      if (!response.ok) {
+        throw new Error(result.message || "Gagal masuk");
       }
-      localStorage.setItem("user_data", JSON.stringify(result.user));
-    }
 
-    const userName = result.user?.name || "Pengguna";
-    toast.success(`Selamat datang kembali, ${userName}!`, {
-      description: "Anda telah berhasil masuk",
-    });
+      // Save tokens
+      localStorage.setItem("access_token", result.access_token);
+      localStorage.setItem("refresh_token", result.refresh_token);
+      
+      const expiresAt = Date.now() + result.expires_in * 1000;
+      localStorage.setItem("expires_at", expiresAt.toString());
 
-    // Redirect based on role
-    const userRole = result.user?.role || "";
-    if (userRole === "user") {
-      router.push("/student/emergency");
-    } else if (userRole === "volunteer" || userRole === "relawan") {
-      router.push("/volunteer/dashboard");
-    } else if (userRole === "admin") {
-      router.push("/admin/dashboard");
-    } else {
-      router.push("/auth/login");
+      if (result.user) {
+        if (result.user.role) {
+          localStorage.setItem("user_role", result.user.role);
+        }
+        localStorage.setItem("user_data", JSON.stringify(result.user));
+      }
+
+      const userName = result.user?.name || "Pengguna";
+      toast.success(`Selamat datang kembali, ${userName}!`, {
+        description: "Anda telah berhasil masuk",
+      });
+
+      // Redirect based on role
+      const userRole = result.user?.role || "";
+      if (userRole === "user") {
+        router.push("/student/emergency");
+      } else if (userRole === "volunteer" || userRole === "relawan") {
+        router.push("/volunteer/dashboard");
+      } else if (userRole === "admin") {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/auth/login");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(error instanceof Error ? error.message : "Terjadi kesalahan yang tidak terduga");
+      toast.error("Gagal masuk", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan yang tidak terduga",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error("Login error:", error);
-    setError(error instanceof Error ? error.message : "Terjadi kesalahan yang tidak terduga");
-    toast.error("Gagal masuk", {
-      description: error instanceof Error ? error.message : "Terjadi kesalahan yang tidak terduga",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <div className="relative flex min-h-screen w-full">
@@ -120,11 +118,13 @@ export default function LoginPage() {
         {/* Bagian Branding (sisi kiri pada desktop) */}
         <div className="mb-8 w-full max-w-md text-center lg:mb-0 lg:mr-12 lg:w-1/2 lg:text-left">
           <div className="mb-6 flex justify-center lg:justify-start">
-              <img
-                src="https://firebasestorage.googleapis.com/v0/b/seputipy.appspot.com/o/covers%2Fundip.png?alt=media"
-                alt="Logo UNDIP"
-                className="h-32 w-29"
-              />
+            <Image
+              src="https://firebasestorage.googleapis.com/v0/b/seputipy.appspot.com/o/covers%2Fundip.png?alt=media"
+              alt="Logo UNDIP"
+              width={116}
+              height={128}
+              className="h-32 w-29"
+            />
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">SIGAP UNDIP</h1>
           <p className="mt-3 text-xl text-gray-200">
@@ -161,7 +161,7 @@ export default function LoginPage() {
                     <FormItem>
                       <FormLabel className="block text-sm font-medium text-gray-700 mb-1">Email</FormLabel>
                       <div
-                        className={`relative rounded-lg transition-all duration-200 focus-within:ring-2 focus-within:ring-gray-500 ${shakeError === "email" ? "animate-shake" : ""} ${form.formState.errors.email ? "ring-2 ring-red-400" : ""}`}
+                        className={`relative rounded-lg transition-all duration-200 focus-within:ring-2 focus-within:ring-gray-500 ${form.formState.errors.email ? "ring-2 ring-red-400" : ""}`}
                       >
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                           <Mail size={18} />
@@ -188,7 +188,7 @@ export default function LoginPage() {
                     <FormItem>
                       <FormLabel className="block text-sm font-medium text-gray-700 mb-1">Password</FormLabel>
                       <div
-                        className={`relative rounded-lg transition-all duration-200 focus-within:ring-2 focus-within:ring-gray-500 ${shakeError === "password" ? "animate-shake" : ""} ${form.formState.errors.password ? "ring-2 ring-red-400" : ""}`}
+                        className={`relative rounded-lg transition-all duration-200 focus-within:ring-2 focus-within:ring-gray-500 ${form.formState.errors.password ? "ring-2 ring-red-400" : ""}`}
                       >
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                           <Lock size={18} />
@@ -237,7 +237,7 @@ export default function LoginPage() {
                 {/* Notes baru di bawah tombol masuk dengan style lebih mirip gambar */}
                 <div className="bg-blue-50 border-l-4 border-blue-500 py-2 px-4 rounded-md mt-0.5">
                   <div className="flex items-center">
-                    <InfoIcon className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0" />
+                    <Info className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0" />
                     <p className="text-sm text-blue-700">
                       Jika belum pernah menggunakan SIGAP UNDIP, silakan daftar terlebih dahulu
                     </p>

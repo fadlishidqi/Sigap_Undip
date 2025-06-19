@@ -1,4 +1,3 @@
-// src/app/student/report/page.tsx
 "use client";
 
 import React, { useState, useRef, useEffect, FormEvent } from "react";
@@ -7,16 +6,13 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Upload, 
-  Camera, 
   X, 
-  Check, 
   AlertCircle,
   MapPin, 
   FileType, 
   ImageIcon,
   Loader2,
   ArrowRight,
-  Shield,
   RefreshCw,
   FileText,
   Send
@@ -27,9 +23,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { isAuthenticated, getAccessToken } from "@/lib/auth";
 import StudentWrapper from '@/components/shared/StudentWrapper';
+import Image from "next/image";
 
 // Opsi jenis masalah
 const reportTypeOptions = [
@@ -102,10 +98,7 @@ export default function ReportPhotoPage() {
       setSelectedFile(file);
       
       // Hapus kesalahan file sebelumnya
-      setFormErrors(prev => {
-        const { photo, ...rest } = prev;
-        return rest;
-      });
+      
       
       // Buat URL pratinjau
       const reader = new FileReader();
@@ -441,9 +434,11 @@ export default function ReportPhotoPage() {
                             className="relative"
                           >
                             <div className="aspect-video rounded-lg overflow-hidden bg-gray-100">
-                              <img 
+                              <Image 
                                 src={previewImage} 
                                 alt="Preview foto laporan" 
+                                width={600}
+                                height={400}
                                 className="w-full h-full object-cover" 
                               />
                             </div>
@@ -541,10 +536,6 @@ export default function ReportPhotoPage() {
                         value={reportType}
                         onValueChange={(value) => {
                           setReportType(value);
-                          setFormErrors(prev => {
-                            const { type, ...rest } = prev;
-                            return rest;
-                          });
                         }}
                         placeholder="Pilih kategori masalah yang sesuai"
                         options={reportTypeOptions}
@@ -576,12 +567,7 @@ export default function ReportPhotoPage() {
                           value={location}
                           onChange={(e) => {
                             setLocation(e.target.value);
-                            if (e.target.value.length >= 3) {
-                              setFormErrors(prev => {
-                                const { location, ...rest } = prev;
-                                return rest;
-                              });
-                            }
+                            
                           }}
                           className={`pl-9 h-9 text-sm border-gray-300 ${hasError('location') ? 'border-red-300' : ''}`}
                         />
@@ -611,12 +597,7 @@ export default function ReportPhotoPage() {
                       value={description}
                       onChange={(e) => {
                         setDescription(e.target.value);
-                        if (e.target.value.trim().length >= 10) {
-                          setFormErrors(prev => {
-                            const { description, ...rest } = prev;
-                            return rest;
-                          });
-                        }
+                        
                       }}
                       className={`resize-none text-sm border-gray-300 ${hasError('description') ? 'border-red-300' : ''}`}
                     />

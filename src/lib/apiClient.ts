@@ -6,6 +6,9 @@ interface ApiClientOptions {
   headers?: Record<string, string>;
 }
 
+// Define a generic type for request data
+type RequestData = Record<string, unknown> | unknown[] | string | number | boolean | null;
+
 class ApiClient {
   private baseUrl: string;
   private defaultHeaders: Record<string, string>;
@@ -21,7 +24,7 @@ class ApiClient {
   async request<T>(
     endpoint: string,
     method: string = 'GET',
-    data?: any,
+    data?: RequestData,
     requireAuth: boolean = true
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
@@ -87,11 +90,11 @@ class ApiClient {
     return this.request<T>(endpoint, 'GET', undefined, requireAuth);
   }
 
-  async post<T>(endpoint: string, data: any, requireAuth: boolean = true): Promise<T> {
+  async post<T>(endpoint: string, data: RequestData, requireAuth: boolean = true): Promise<T> {
     return this.request<T>(endpoint, 'POST', data, requireAuth);
   }
 
-  async put<T>(endpoint: string, data: any, requireAuth: boolean = true): Promise<T> {
+  async put<T>(endpoint: string, data: RequestData, requireAuth: boolean = true): Promise<T> {
     return this.request<T>(endpoint, 'PUT', data, requireAuth);
   }
 

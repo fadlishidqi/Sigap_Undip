@@ -2,32 +2,23 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { clearAuthTokens, getUserData } from "@/lib/auth";
+import { clearAuthTokens } from "@/lib/auth";
 import { toast } from "sonner";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { 
   Users, 
   FileText, 
-  Settings, 
-  Bell, 
-  ChevronLeft,
-  LogOut, 
-  Sliders, 
   PieChart,
-  BarChart3,
-  Search,
   AlertTriangle,
   Calendar,
   Moon,
   Sun,
   Monitor,
-  User,
-  HelpCircle,
+  LogOut,
   Palette
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -36,9 +27,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import Footer from "@/components/footer";
@@ -52,10 +40,9 @@ type Theme = 'light' | 'dark' | 'system';
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<{name?: string; email?: string; avatar_url?: string} | null>(null);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [theme, setTheme] = useState<Theme>('system');
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   // Initialize theme
@@ -66,11 +53,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const updateTheme = () => {
       if (savedTheme === 'system') {
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setIsDarkMode(isDark);
         document.documentElement.classList.toggle('dark', isDark);
       } else {
         const isDark = savedTheme === 'dark';
-        setIsDarkMode(isDark);
         document.documentElement.classList.toggle('dark', isDark);
       }
     };
@@ -85,13 +70,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [theme]);
 
   useEffect(() => {
-    // Ambil data pengguna dari localStorage
+    // Get user data from localStorage
     const storedUserData = localStorage.getItem("user_data");
     if (storedUserData) {
       try {
         setUserData(JSON.parse(storedUserData));
       } catch (e) {
-        console.error("Error mengurai data pengguna:", e);
+        console.error("Error parsing user data:", e);
       }
     }
   }, []);
@@ -102,28 +87,26 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     
     if (newTheme === 'system') {
       const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setIsDarkMode(isDark);
       document.documentElement.classList.toggle('dark', isDark);
     } else {
       const isDark = newTheme === 'dark';
-      setIsDarkMode(isDark);
       document.documentElement.classList.toggle('dark', isDark);
     }
   };
 
   const handleLogout = () => {
     clearAuthTokens();
-    toast.success("Berhasil keluar dari sistem");
+    toast.success("Successfully logged out");
     router.push("/auth/login");
   };
 
-  // Modern animation variants
+  // Animation variants
   const sidebarVariants = {
     expanded: {
       width: "18rem",
       transition: { 
         duration: 0.4, 
-        ease: [0.23, 1, 0.32, 1] // Custom easing for smoother animation
+        ease: [0.23, 1, 0.32, 1]
       }
     },
     collapsed: {
@@ -150,7 +133,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
     if (!name) return "AD";
     return name
       .split(" ")
@@ -165,10 +148,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const menuItems = [
     { icon: PieChart, label: "Dashboard", path: "/admin/dashboard", color: "text-blue-600" },
-    { icon: Users, label: "Relawan", path: "/admin/volunteers", color: "text-green-600" },
-    { icon: FileText, label: "Laporan", path: "/admin/reports", color: "text-purple-600" },
+    { icon: Users, label: "Volunteers", path: "/admin/volunteers", color: "text-green-600" },
+    { icon: FileText, label: "Reports", path: "/admin/reports", color: "text-purple-600" },
     { icon: AlertTriangle, label: "Panic Reports", path: "/admin/panic-reports", color: "text-red-600" },
-    { icon: Calendar, label: "Manajemen Shift", path: "/admin/shift-management", color: "text-orange-600" },  
+    { icon: Calendar, label: "Shift Management", path: "/admin/shift-management", color: "text-orange-600" },  
   ];
 
   const getThemeIcon = () => {
@@ -182,7 +165,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex-col transition-colors duration-300">
       <div className="flex flex-1 overflow-hidden">
-        {/* Modern Sidebar - Fixed Position */}
+        {/* Sidebar */}
         <motion.div 
           ref={sidebarRef}
           className="fixed left-0 top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200/60 dark:border-gray-700/60 h-screen overflow-hidden z-40 shadow-lg"
@@ -193,7 +176,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           onHoverEnd={() => setIsSidebarExpanded(false)}
         >
           <div className="flex flex-col h-full">
-            {/* Modern Logo Section */}
+            {/* Logo Section */}
             <div className="h-20 flex items-center px-6 border-b border-gray-200/60 dark:border-gray-700/60">
               <div className="flex items-center justify-center w-full">
                 <div className="relative">
@@ -218,7 +201,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
 
-            {/* Modern Menu Items */}
+            {/* Menu Items */}
             <div className="flex-1 py-8 px-4 space-y-3">
               {menuItems.map((item) => {
                 const isItemActive = isActive(item.path);
@@ -240,7 +223,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         }
                       `}
                     >
-                      {/* Active indicator */}
                       {isItemActive && (
                         <motion.div
                           layoutId="activeIndicator"
@@ -262,7 +244,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         {item.label}
                       </motion.span>
 
-                      {/* Hover effect */}
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     </div>
                   </motion.div>
@@ -270,7 +251,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               })}
             </div>
 
-            {/* Modern Logout Button */}
+            {/* Logout Button */}
             <div className="p-4 mb-6">
               <motion.div
                 whileHover={{ scale: 1.02 }}
@@ -285,7 +266,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     variants={textVariants}
                     className="ml-4 font-semibold text-sm"
                   >
-                    Keluar
+                    Logout
                   </motion.span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-50/50 to-transparent dark:via-red-900/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                 </button>
@@ -294,9 +275,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </motion.div>
 
-        {/* Main Content - Adjusted for Fixed Sidebar */}
+        {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden" style={{ marginLeft: isSidebarExpanded ? '18rem' : '5rem' }}>
-          {/* Modern Header */}
+          {/* Header */}
           <header className="h-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200/60 dark:border-gray-700/60 flex items-center justify-between px-8 shadow-sm">
             <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-3">
@@ -320,7 +301,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel className="flex items-center">
                     <Palette className="w-4 h-4 mr-2" />
-                    Tema Tampilan
+                    Theme
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
@@ -328,24 +309,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     className="cursor-pointer"
                   >
                     <Sun className="w-4 h-4 mr-2" />
-                    <span>Terang</span>
-                    {theme === 'light' && <Badge className="ml-auto">Aktif</Badge>}
+                    <span>Light</span>
+                    {theme === 'light' && <Badge className="ml-auto">Active</Badge>}
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => handleThemeChange('dark')}
                     className="cursor-pointer"
                   >
                     <Moon className="w-4 h-4 mr-2" />
-                    <span>Gelap</span>
-                    {theme === 'dark' && <Badge className="ml-auto">Aktif</Badge>}
+                    <span>Dark</span>
+                    {theme === 'dark' && <Badge className="ml-auto">Active</Badge>}
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => handleThemeChange('system')}
                     className="cursor-pointer"
                   >
                     <Monitor className="w-4 h-4 mr-2" />
-                    <span>Sistem</span>
-                    {theme === 'system' && <Badge className="ml-auto">Aktif</Badge>}
+                    <span>System</span>
+                    {theme === 'system' && <Badge className="ml-auto">Active</Badge>}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -389,7 +370,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     onClick={handleLogout}
                   >
                     <LogOut className="mr-3 h-4 w-4" />
-                    <span>Keluar</span>
+                    <span>Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

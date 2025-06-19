@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { clearAuthTokens, getUserData } from "@/lib/auth";
+import { clearAuthTokens } from "@/lib/auth";
 import { toast } from "sonner";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,13 +17,9 @@ import {
   Moon,
   Sun,
   Monitor,
-  User,
-  HelpCircle,
   Palette,
-  Settings,
-  Bell,
-  Menu,
-  X
+  X,
+  Menu
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -42,17 +38,22 @@ interface VolunteerDashboardLayoutProps {
   children: React.ReactNode;
 }
 
+interface UserData {
+  name: string;
+  email: string;
+  avatar_url?: string;
+}
+
 type Theme = 'light' | 'dark' | 'system';
 
 export default function VolunteerDashboardLayout({ children }: VolunteerDashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [theme, setTheme] = useState<Theme>('system');
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -64,11 +65,9 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
     const updateTheme = () => {
       if (savedTheme === 'system') {
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setIsDarkMode(isDark);
         document.documentElement.classList.toggle('dark', isDark);
       } else {
         const isDark = savedTheme === 'dark';
-        setIsDarkMode(isDark);
         document.documentElement.classList.toggle('dark', isDark);
       }
     };
@@ -140,11 +139,9 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
     
     if (newTheme === 'system') {
       const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setIsDarkMode(isDark);
       document.documentElement.classList.toggle('dark', isDark);
     } else {
       const isDark = newTheme === 'dark';
-      setIsDarkMode(isDark);
       document.documentElement.classList.toggle('dark', isDark);
     }
   };
@@ -241,7 +238,7 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
     }
   };
 
-  const renderMenuItems = (mobile = false) => (
+  const renderMenuItems = () => (
     <>
       {menuItems.map((item) => {
         const isItemActive = isActive(item.path);
@@ -249,9 +246,9 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
           <motion.div
             key={item.path}
             className="relative"
-            whileHover={{ scale: 1.01 }} // Reduced scale to prevent jank
+            whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
-            transition={{ duration: 0.15 }} // Faster micro-interactions
+            transition={{ duration: 0.15 }}
           >
             <div
               onClick={() => handleNavigation(item.path)}
@@ -264,7 +261,6 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
                 }
               `}
             >
-              {/* Active indicator - Optimized */}
               {isItemActive && (
                 <motion.div
                   layoutId="activeIndicatorVolunteer"
@@ -286,7 +282,6 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
                 {item.label}
               </motion.span>
 
-              {/* Hover effect - Optimized */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
             </div>
           </motion.div>
@@ -313,7 +308,7 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
           )}
         </AnimatePresence>
 
-        {/* Desktop Sidebar - Optimized Fixed Position */}
+        {/* Desktop Sidebar */}
         <motion.div 
           ref={sidebarRef}
           className="hidden lg:flex fixed left-0 top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200/60 dark:border-gray-700/60 h-screen overflow-hidden z-40 shadow-lg"
@@ -322,10 +317,10 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
           variants={sidebarVariants}
           onHoverStart={() => !isMobile && setIsSidebarExpanded(true)}
           onHoverEnd={() => !isMobile && setIsSidebarExpanded(false)}
-          style={{ willChange: "width" }} // Optimize for width changes
+          style={{ willChange: "width" }}
         >
           <div className="flex flex-col h-full w-full">
-            {/* Modern Logo Section - Optimized */}
+            {/* Logo Section */}
             <div className="h-20 flex items-center px-6 border-b border-gray-200/60 dark:border-gray-700/60 flex-shrink-0">
               <div className="flex items-center w-full min-w-0">
                 <div className="relative flex-shrink-0">
@@ -350,7 +345,7 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
               </div>
             </div>
 
-            {/* Volunteer Badge - Optimized */}
+            {/* Volunteer Badge */}
             <div className="px-6 py-4 flex-shrink-0">
               <motion.div
                 variants={textVariants}
@@ -365,60 +360,12 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
               </motion.div>
             </div>
 
-            {/* Modern Menu Items - Optimized */}
+            {/* Menu Items */}
             <div className="flex-1 py-8 px-4 space-y-3 overflow-y-auto">
-              {menuItems.map((item) => {
-                const isItemActive = isActive(item.path);
-                return (
-                  <motion.div
-                    key={item.path}
-                    className="relative"
-                    whileHover={{ scale: 1.01 }} // Reduced scale to prevent jank
-                    whileTap={{ scale: 0.99 }}
-                    transition={{ duration: 0.15 }} // Faster micro-interactions
-                  >
-                    <div
-                      onClick={() => handleNavigation(item.path)}
-                      className={`
-                        flex items-center px-4 py-4 rounded-xl cursor-pointer
-                        transition-all duration-200 group relative overflow-hidden
-                        ${isItemActive 
-                          ? 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 text-green-700 dark:text-green-300 shadow-sm' 
-                          : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400'
-                        }
-                      `}
-                    >
-                      {/* Active indicator - Optimized */}
-                      {isItemActive && (
-                        <motion.div
-                          layoutId="activeIndicatorVolunteer"
-                          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-green-600 rounded-r-full"
-                          transition={{ type: "spring", stiffness: 400, damping: 40 }}
-                        />
-                      )}
-                      
-                      <div className="relative flex-shrink-0">
-                        <item.icon className={`w-6 h-6 transition-colors duration-200 ${
-                          isItemActive ? 'text-green-600 dark:text-green-400' : `${item.color} group-hover:text-green-600 dark:group-hover:text-green-400`
-                        }`} />
-                      </div>
-                      
-                      <motion.span
-                        variants={textVariants}
-                        className="ml-4 font-semibold text-sm whitespace-nowrap overflow-hidden text-ellipsis"
-                      >
-                        {item.label}
-                      </motion.span>
-
-                      {/* Hover effect - Optimized */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+              {renderMenuItems()}
             </div>
 
-            {/* Modern Logout Button - Optimized */}
+            {/* Logout Button */}
             <div className="p-4 mb-6 flex-shrink-0">
               <motion.div
                 whileHover={{ scale: 1.01 }}
@@ -443,7 +390,7 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
           </div>
         </motion.div>
 
-        {/* Mobile Sidebar - Optimized */}
+        {/* Mobile Sidebar */}
         <motion.div
           className="lg:hidden fixed left-0 top-0 h-full w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200/60 dark:border-gray-700/60 z-50 overflow-y-auto shadow-lg"
           initial="closed"
@@ -451,7 +398,7 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
           variants={mobileMenuVariants}
         >
           <div className="flex flex-col h-full">
-            {/* Mobile Header - Optimized */}
+            {/* Mobile Header */}
             <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200/60 dark:border-gray-700/60 flex-shrink-0">
               <div className="flex items-center min-w-0">
                 <div className="rounded-xl bg-gradient-to-br from-green-500 to-green-600 w-8 h-8 flex items-center justify-center overflow-hidden shadow-lg flex-shrink-0">
@@ -487,7 +434,7 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
 
             {/* Mobile Menu Items */}
             <div className="flex-1 py-4 space-y-1 overflow-y-auto">
-              {renderMenuItems(true)}
+              {renderMenuItems()}
             </div>
 
             {/* Mobile User Info & Logout */}
@@ -518,7 +465,7 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
           </div>
         </motion.div>
 
-        {/* Main Content - Optimized for Fixed Sidebar with Smooth Transition */}
+        {/* Main Content */}
         <motion.div 
           className="flex-1 flex flex-col overflow-hidden"
           animate={{ 
@@ -526,10 +473,10 @@ export default function VolunteerDashboardLayout({ children }: VolunteerDashboar
           }}
           transition={{ 
             duration: 0.3, 
-            ease: [0.4, 0, 0.2, 1] // Same easing as sidebar
+            ease: [0.4, 0, 0.2, 1]
           }}
         >
-          {/* Modern Header */}
+          {/* Header */}
           <header className="h-16 lg:h-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200/60 dark:border-gray-700/60 flex items-center justify-between px-4 sm:px-6 lg:px-8 shadow-sm flex-shrink-0">
             <div className="flex items-center space-x-4">
               {/* Mobile Menu Button */}

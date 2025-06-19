@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get('page') || '1';
     const status = searchParams.get('status') || '';
     
-    let queryParams = new URLSearchParams();
+    const queryParams = new URLSearchParams();
     queryParams.append('page', page);
     
     if (status) {

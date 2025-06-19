@@ -1,10 +1,9 @@
-// src/app/student/emergency/page.tsx
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
 import PanicButton from "@/components/PanicButton";
 import { motion, AnimatePresence } from "framer-motion";
-import { Phone, AlertCircle, Info, MapPin, Shield, CheckCircle, Zap } from "lucide-react";
+import { Phone, AlertCircle, MapPin, Shield, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocationPermission } from "@/hooks/useLocationPermission";
 import { toast } from "sonner";

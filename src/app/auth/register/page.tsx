@@ -1,4 +1,3 @@
-// src/app/auth/register/page.tsx
 "use client"
 
 import { useState } from "react"
@@ -6,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Eye, EyeOff, Loader2, Shield, User, Mail, Lock, Hash, BookOpen, AlertCircle, Phone } from "lucide-react"
+import { Eye, EyeOff, Loader2, User, Mail, Lock, Hash, BookOpen, AlertCircle, Phone } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import Image from "next/image"
@@ -165,11 +164,13 @@ export default function RegisterPage() {
         {/* Bagian Branding (sisi kiri pada desktop) */}
         <div className="mb-8 w-full max-w-md text-center lg:mb-0 lg:mr-12 lg:w-1/2 lg:text-left">
           <div className="mb-6 flex justify-center lg:justify-start">
-              <img
-                src="https://firebasestorage.googleapis.com/v0/b/seputipy.appspot.com/o/covers%2Fundip.png?alt=media"
-                alt="Logo UNDIP"
-                className="h-32 w-29"
-              />
+            <Image
+              src="https://firebasestorage.googleapis.com/v0/b/seputipy.appspot.com/o/covers%2Fundip.png?alt=media"
+              alt="Logo UNDIP"
+              width={116}
+              height={128}
+              className="h-32 w-29"
+            />
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">SIGAP UNDIP</h1>
           <p className="mt-3 text-xl text-gray-200">

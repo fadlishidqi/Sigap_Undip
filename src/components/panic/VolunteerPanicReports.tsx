@@ -1,7 +1,7 @@
 // src/components/panic/VolunteerPanicReports.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { 
   RefreshCw, 
@@ -15,8 +15,6 @@ import {
   Calendar,
   ExternalLink,
   Play,
-  Square,
-  MessageSquare,
   Edit,
   Filter
 } from "lucide-react";
@@ -63,11 +61,7 @@ export default function VolunteerPanicReports() {
   const [updateNotes, setUpdateNotes] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    fetchTodayPanicReports();
-  }, [statusFilter]);
-
-  const fetchTodayPanicReports = async () => {
+  const fetchTodayPanicReports = useCallback(async () => {
     setIsRefreshing(true);
     
     try {
@@ -99,13 +93,17 @@ export default function VolunteerPanicReports() {
       
       setPanicData(data);
       
-    } catch (error) {
+    } catch {
       toast.error("Anda Tidak memiliki akses untuk melihat laporan panic hari ini");
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchTodayPanicReports();
+  }, [fetchTodayPanicReports]);
 
   const updatePanicStatus = async (panicId: number, status: 'handling' | 'resolved', notes?: string) => {
     setIsUpdating(true);

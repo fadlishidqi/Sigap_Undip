@@ -11,10 +11,7 @@ import {
   CheckCircle,
   User,
   AlertCircle,
-  Filter,
-  Menu,
-  Grid3X3,
-  List
+  Filter
 } from "lucide-react";
 import { getAccessToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";

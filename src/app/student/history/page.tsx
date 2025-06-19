@@ -1,7 +1,6 @@
-// src/app/student/history/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import StudentWrapper from '@/components/shared/StudentWrapper';
 import { 
@@ -22,9 +21,6 @@ import {
   Eye,
   MessageSquare,
   X,
-  History,
-  TrendingUp,
-  BarChart3,
   Activity
 } from "lucide-react";
 import { getAccessToken, isAuthenticated } from "@/lib/auth";
@@ -42,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Label } from "@radix-ui/react-label";
+import Image from "next/image";
 
 // Interface untuk user report
 interface UserReport {
@@ -118,18 +115,7 @@ export default function ReportHistoryPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
-  // Check authentication saat komponen mount
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      toast.error("Anda harus masuk untuk melihat histori laporan");
-      router.push("/auth/login");
-      return;
-    }
-    
-    fetchUserReports();
-  }, [currentPage, statusFilter, typeFilter, router]);
-
-  const fetchUserReports = async () => {
+  const fetchUserReports = useCallback(async () => {
     setIsRefreshing(true);
     
     try {
@@ -179,7 +165,18 @@ export default function ReportHistoryPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [currentPage, statusFilter, typeFilter, router]);
+
+  // Check authentication saat komponen mount
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      toast.error("Anda harus masuk untuk melihat histori laporan");
+      router.push("/auth/login");
+      return;
+    }
+    
+    fetchUserReports();
+  }, [fetchUserReports, router]);
 
   // Fetch report detail
   const fetchReportDetail = async (reportId: number) => {
@@ -381,7 +378,7 @@ export default function ReportHistoryPage() {
               color: "text-green-600",
               bg: "bg-green-50"
             }
-          ].map((stat, index) => (
+          ].map((stat) => (
             <div
               key={stat.label}
               className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300"
@@ -539,14 +536,14 @@ export default function ReportHistoryPage() {
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-100">
-                    {filteredReports.map((report, index) => {
+                    {filteredReports.map((report) => {
                       const status = getStatusBadge(report.status);
                       return (
                         <motion.div
                           key={report.id}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
+                          transition={{ delay: 0.1 }}
                           className="p-6 hover:bg-gray-50 transition-all duration-300"
                         >
                           <div className="space-y-4">
@@ -658,9 +655,9 @@ export default function ReportHistoryPage() {
                       <div className="flex gap-1">
                         {reportsData.links
                           .filter(link => link.label !== '&laquo; Previous' && link.label !== 'Next &raquo;')
-                          .map((link, index) => (
+                          .map((link) => (
                             <Button
-                              key={index}
+                              key={link.label}
                               variant={link.active ? "default" : "outline"}
                               onClick={() => link.url && handlePageChange(parseInt(link.label))}
                               disabled={!link.url || isNaN(parseInt(link.label))}
@@ -777,9 +774,11 @@ export default function ReportHistoryPage() {
                        <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-3">Bukti Foto</h3>
                        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border">
                          {selectedReport.photo_url ? (
-                           <img
+                           <Image
                              src={selectedReport.photo_url}
                              alt={`Laporan #${selectedReport.id}`}
+                             width={600}
+                             height={400}
                              className="w-full object-contain max-h-[300px]"
                            />
                          ) : (

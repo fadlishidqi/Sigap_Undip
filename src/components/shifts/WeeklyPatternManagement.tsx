@@ -1,7 +1,7 @@
 // src/components/shifts/WeeklyPatternManagement.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { 
   RefreshCw, 
@@ -11,15 +11,11 @@ import {
   Plus,
   Edit,
   Save,
-  X,
   Clock,
   Settings,
   CalendarDays,
   UserCheck,
-  Trash2,
   CheckCircle,
-  AlertCircle,
-  Filter,
   Search,
   MoreHorizontal,
   Activity,
@@ -31,13 +27,12 @@ import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -51,13 +46,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { 
   WeeklyPatternsResponse, 
-  DayPattern, 
-  Relawan,
   DayOfWeek,
   SetDayPatternRequest,
   SetDayPatternResponse 
@@ -87,18 +79,7 @@ export default function WeeklyPatternManagement() {
   const [editingDay, setEditingDay] = useState<DayOfWeek | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    await Promise.all([
-      fetchWeeklyPatterns(),
-      fetchVolunteers()
-    ]);
-  };
-
-  const fetchWeeklyPatterns = async () => {
+  const fetchWeeklyPatterns = useCallback(async () => {
     setIsRefreshing(true);
     
     try {
@@ -132,9 +113,9 @@ export default function WeeklyPatternManagement() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, []);
 
-  const fetchVolunteers = async () => {
+  const fetchVolunteers = useCallback(async () => {
     try {
       const token = await getAccessToken();
       if (!token) return;
@@ -154,7 +135,18 @@ export default function WeeklyPatternManagement() {
     } catch (error) {
       console.error("Error mengambil daftar relawan:", error);
     }
-  };
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    await Promise.all([
+      fetchWeeklyPatterns(),
+      fetchVolunteers()
+    ]);
+  }, [fetchWeeklyPatterns, fetchVolunteers]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSetDayPattern = async (dayOfWeek: DayOfWeek, relawanIds: number[]) => {
     setIsSubmitting(true);
@@ -303,19 +295,6 @@ export default function WeeklyPatternManagement() {
     }
   };
 
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.5,
-        ease: "easeOut"
-      }
-    })
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-12">
@@ -420,7 +399,7 @@ export default function WeeklyPatternManagement() {
             color: "text-orange-600 dark:text-orange-400",
             bg: "bg-orange-50 dark:bg-orange-900/20"
           }
-        ].map((stat, index) => (
+        ].map((stat) => (
           <div
             key={stat.label}
             className="bg-white dark:bg-gray-900 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300"
@@ -478,7 +457,7 @@ export default function WeeklyPatternManagement() {
                   animate="visible"
                   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
                 >
-                  {DAYS_OF_WEEK.map((day, index) => {
+                  {DAYS_OF_WEEK.map((day) => {
                     const pattern = weeklyPatterns.weekly_patterns[day.value];
                     const hasPattern = pattern && pattern.relawan_count > 0;
                     

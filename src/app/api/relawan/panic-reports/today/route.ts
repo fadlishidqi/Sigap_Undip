@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || '';
     
     // Build query string for external API
-    let queryParams = new URLSearchParams();
+    const
+     queryParams = new URLSearchParams();
     queryParams.append('page', page);
     
     if (status) {

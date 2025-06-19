@@ -1,7 +1,7 @@
 // src/components/relawan/TodayPanicReports.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { 
   RefreshCw, 
@@ -24,7 +24,6 @@ import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -61,11 +60,7 @@ export default function TodayPanicReports() {
   const [newStatus, setNewStatus] = useState<PanicStatus | ''>('');
   const [updateNotes, setUpdateNotes] = useState('');
 
-  useEffect(() => {
-    fetchTodayPanicReports();
-  }, [statusFilter]);
-
-  const fetchTodayPanicReports = async () => {
+  const fetchTodayPanicReports = useCallback(async () => {
     setIsRefreshing(true);
     
     try {
@@ -106,7 +101,11 @@ export default function TodayPanicReports() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchTodayPanicReports();
+  }, [fetchTodayPanicReports]);
 
   const updatePanicStatus = async (panicId: number, status: PanicStatus, notes?: string) => {
     setIsUpdating(true);

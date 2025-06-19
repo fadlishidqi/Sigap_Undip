@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date') || '';
     
     // Build query string for external API
-    let queryParams = new URLSearchParams();
+    const queryParams = new URLSearchParams();
     queryParams.append('page', page);
     
     if (status) {

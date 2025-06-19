@@ -1,7 +1,7 @@
 // src/components/panic/AdminPanicReports.tsx (Update)
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { 
   RefreshCw, 
@@ -19,7 +19,6 @@ import {
   Filter,
   Grid,
   List,
-  Menu,
   Info,
   Phone,
   Mail,
@@ -28,8 +27,7 @@ import {
   Activity,
   TrendingUp,
   Map,
-  SlidersHorizontal,
-  FileText
+  SlidersHorizontal
 } from "lucide-react";
 import { getAccessToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -43,7 +41,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 // Interface berdasarkan response API yang sebenarnya
 interface PanicUser {
@@ -112,14 +110,9 @@ export default function AdminPanicReports() {
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
 
-  useEffect(() => {
-    fetchPanicReports();
-  }, [currentPage, statusFilter, dateFilter]);
-
-  const fetchPanicReports = async () => {
+  const fetchPanicReports = useCallback(async () => {
     setIsRefreshing(true);
     
     try {
@@ -165,7 +158,11 @@ export default function AdminPanicReports() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [currentPage, statusFilter, dateFilter]);
+
+  useEffect(() => {
+    fetchPanicReports();
+  }, [fetchPanicReports]);
 
   // Format tanggal
   const formatDateTime = (dateString: string) => {
@@ -228,11 +225,6 @@ export default function AdminPanicReports() {
   // Handle filter changes
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter(status);
-    setCurrentPage(1); // Reset to first page when filter changes
-  };
-
-  const handleDateFilterChange = (date: string) => {
-    setDateFilter(date);
     setCurrentPage(1); // Reset to first page when filter changes
   };
 
@@ -374,7 +366,7 @@ export default function AdminPanicReports() {
             color: "text-green-600 dark:text-green-400",
             bg: "bg-green-50 dark:bg-green-900/20"
           }
-        ].map((stat, index) => (
+        ].map((stat) => (
           <div
             key={stat.label}
             className="bg-white dark:bg-gray-900 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300"
@@ -433,7 +425,7 @@ export default function AdminPanicReports() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className={`p-4 ${showFilters ? 'block' : 'hidden sm:block'}`}>
+          <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pencarian</label>
@@ -593,7 +585,6 @@ export default function AdminPanicReports() {
                     >
                       {filteredReports.map((report) => {
                         const status = getStatusBadge(report.status);
-                        const priority = getPriorityLevel(report.created_at);
                         
                         return (
                           <motion.div
@@ -675,7 +666,7 @@ export default function AdminPanicReports() {
                       initial="hidden"
                       animate="visible"
                     >
-                      {filteredReports.map((report, index) => {
+                      {filteredReports.map((report) => {
                         const status = getStatusBadge(report.status);
                         const priority = getPriorityLevel(report.created_at);
                         
@@ -683,18 +674,10 @@ export default function AdminPanicReports() {
                           <motion.div
                             key={report.id}
                             variants={itemVariants}
-                            className={`
-                              p-4 sm:p-6 
-                              hover:bg-gray-50 dark:hover:bg-gray-800/50 
-                              transition-all duration-200
-                              border-l-4 border-transparent hover:border-red-300 dark:hover:border-red-600
-                              ${index === 0 ? 'border-t border-gray-200 dark:border-gray-700' : ''}
-                              relative
-                              group
-                            `}
+                            className="p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-200 border-l-4 border-transparent hover:border-red-300 dark:hover:border-red-600 relative group"
                           >
                             {/* Subtle background highlight on hover */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-red-50/50 to-transparent dark:from-red-900/10 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-red-50/50 to-transparent dark:from-red-900/10 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                             
                             {/* Content */}
                             <div className="relative z-10">
@@ -810,7 +793,7 @@ export default function AdminPanicReports() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => openInMaps(report.latitude, report.longitude)}
-                                    className="border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-700 transition-all duration-200 shadow-sm hover:shadow"
+                                    className="border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-600 shadow-sm"
                                   >
                                     <MapPin className="h-4 w-4 mr-2" />
                                     Lihat di Maps
@@ -862,9 +845,9 @@ export default function AdminPanicReports() {
                   <div className="flex gap-1">
                     {panicData.links
                       .filter(link => link.label !== '&laquo; Previous' && link.label !== 'Next &raquo;')
-                      .map((link, index) => (
+                      .map((link, linkIndex) => (
                         <Button
-                          key={index}
+                          key={linkIndex}
                           variant={link.active ? "default" : "outline"}
                           size="sm"
                           onClick={() => link.url && handlePageChange(parseInt(link.label))}

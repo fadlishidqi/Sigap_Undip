@@ -15,17 +15,14 @@ import {
   ChevronDown,
   ChevronUp,
   Phone,
-  Mail,
   IdCard,
   MoreHorizontal,
-  Menu,
   Grid,
   List,
   SlidersHorizontal,
   Activity,
   TrendingUp,
   UserCheck,
-  Shield,
   Calendar
 } from "lucide-react";
 import { getAccessToken } from "@/lib/auth";
@@ -39,7 +36,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Select } from "@/components/ui/select";
 import {
   DropdownMenu,
@@ -82,7 +79,6 @@ export default function VolunteerManagement() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [sortField, setSortField] = useState<string>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -216,28 +212,6 @@ export default function VolunteerManagement() {
       hour12: false,
       timeZone: 'Asia/Jakarta'
     }).format(date) + ' WIB';
-  };
-
-  const getRoleBadge = (role: string) => {
-    const roleMap: { [key: string]: { text: string, color: string } } = {
-      'admin': {
-        text: "Admin",
-        color: "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800"
-      },
-      'volunteer': {
-        text: "Relawan",
-        color: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-      },
-      'user': {
-        text: "User",
-        color: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
-      }
-    };
-    
-    return roleMap[role] || {
-      text: role.charAt(0).toUpperCase() + role.slice(1),
-      color: "bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
-    };
   };
 
   // Beralih arah pengurutan atau mengubah bidang pengurutan
@@ -458,7 +432,7 @@ export default function VolunteerManagement() {
           color: "text-orange-600 dark:text-orange-400",
           bg: "bg-orange-50 dark:bg-orange-900/20"
         }
-      ].map((stat, index) => (
+      ].map((stat) => (
           <div
             key={stat.label}
             className="bg-white dark:bg-gray-900 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300"
@@ -517,7 +491,7 @@ export default function VolunteerManagement() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className={`p-4 ${showFilters ? 'block' : 'hidden sm:block'}`}>
+          <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pencarian</label>
@@ -882,7 +856,7 @@ export default function VolunteerManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-gray-900 dark:text-white">Konfirmasi Penghapusan</AlertDialogTitle>
             <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
-              Apakah Anda yakin ingin menghapus relawan "{selectedVolunteer?.name}"? 
+              Apakah Anda yakin ingin menghapus relawan &ldquo;{selectedVolunteer?.name}&rdquo;? 
               Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -44,7 +44,7 @@ export default function QuickActions({ reportId, currentStatus, onStatusUpdated 
 
       toast.success("Status berhasil diperbarui");
       onStatusUpdated();
-    } catch (error) {
+    } catch {
       toast.error("Gagal memperbarui status");
     } finally {
       setIsUpdating(false);

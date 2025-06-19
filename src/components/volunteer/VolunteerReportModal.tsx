@@ -6,9 +6,7 @@ import { motion } from "framer-motion";
 import { 
   X, 
   MapPin, 
-  User, 
   Calendar, 
-  FileText, 
   Save, 
   Loader2,
   CheckCircle,
@@ -22,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { getAccessToken } from "@/lib/auth";
 import { toast } from "sonner";
+import Image from "next/image";
 
 interface ReportUser {
   id: number;
@@ -285,9 +284,11 @@ export default function VolunteerReportModal({
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Bukti Foto</h3>
               <div className="bg-gray-100 rounded-lg overflow-hidden border">
                 {report.photo_url ? (
-                  <img
+                  <Image
                     src={report.photo_url}
                     alt={`Laporan #${report.id}`}
+                    width={800}
+                    height={400}
                     className="w-full object-contain max-h-[400px]"
                   />
                 ) : (

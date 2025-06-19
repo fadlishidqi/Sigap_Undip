@@ -8,7 +8,6 @@ import { getAccessToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,

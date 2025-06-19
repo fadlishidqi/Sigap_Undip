@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     for (const baseEndpoint of endpoints) {
       try {
         // Build query string for external API
-        let queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams();
         queryParams.append('page', page);
         
         if (status) {

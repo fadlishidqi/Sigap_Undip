@@ -1,129 +1,114 @@
-"use client";
+"use client"
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import { getUserRole, getAccessToken, getUserData } from "@/lib/auth";
-import { 
-  Loader2, 
-  Users, 
-  FileText, 
-  AlertTriangle, 
-  Clock, 
-  Shield, 
-  UserPlus, 
+import { useEffect, useState, useRef, useCallback } from "react"
+import { getUserRole, getAccessToken, getUserData } from "@/lib/auth"
+import {
+  Loader2,
+  Users,
+  FileText,
+  AlertTriangle,
+  Clock,
+  Shield,
+  UserPlus,
   UserMinus,
-  FileX,
   CheckCircle,
-  XCircle,
   TrendingUp,
   Activity,
-  Bell,
-  Calendar,
   RefreshCw,
-  Settings,
-  BarChart3,
-  MapPin
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { toast } from "sonner";
-import { motion } from "framer-motion";
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { toast } from "sonner"
+import { motion } from "framer-motion"
 
 // Interface untuk relawan
 interface Volunteer {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  nik: string;
-  no_telp: string;
-  created_at: string;
+  id: number
+  name: string
+  email: string
+  role: string
+  nik: string
+  no_telp: string
+  created_at: string
 }
 
 // Interface untuk laporan
 interface Report {
-  id: number;
+  id: number
   user: {
-    id: number;
-    name: string;
-    email: string;
-    nim?: string;
-  };
-  photo_url: string;
-  location: string;
-  problem_type: string;
-  description: string;
-  status: string;
-  created_at: string;
+    id: number
+    name: string
+    email: string
+    nim?: string
+  }
+  photo_url: string
+  location: string
+  problem_type: string
+  description: string
+  status: string
+  created_at: string
 }
 
 // Interface untuk panic alert
 interface PanicAlert {
-  id: number;
+  id: number
   user: {
-    id: number;
-    name: string;
-    email: string;
-  };
-  latitude: number;
-  longitude: number;
-  status: string;
-  created_at: string;
+    id: number
+    name: string
+    email: string
+  }
+  latitude: number
+  longitude: number
+  status: string
+  created_at: string
 }
 
 // Interface untuk aktivitas
-interface Activity {
-  id: string;
-  type: 'volunteer_add' | 'volunteer_remove' | 'report_new' | 'report_resolved' | 'panic_new' | 'panic_handled';
-  title: string;
-  description: string;
-  user?: string;
-  timestamp: string;
+interface ActivityType {
+  id: string
+  type: "volunteer_add" | "volunteer_remove" | "report_new" | "report_resolved" | "panic_new" | "panic_handled"
+  title: string
+  description: string
+  user?: string
+  timestamp: string
   metadata?: {
-    reportId?: number;
-    volunteerId?: number;
-    panicId?: number;
-    status?: string;
-  };
+    reportId?: number
+    volunteerId?: number
+    panicId?: number
+    status?: string
+  }
 }
 
 // Interface untuk stats
 interface DashboardStats {
-  totalVolunteers: number;
-  totalReports: number;
-  totalPanicAlerts: number;
-  pendingReports: number;
-  resolvedReports: number;
-  activePanics: number;
-  volunteersThisMonth: number;
-  reportsThisMonth: number;
+  totalVolunteers: number
+  totalReports: number
+  totalPanicAlerts: number
+  pendingReports: number
+  resolvedReports: number
+  activePanics: number
+  volunteersThisMonth: number
+  reportsThisMonth: number
 }
 
 // Interface untuk data dashboard
 interface DashboardData {
-  stats: DashboardStats;
-  recentActivities: Activity[];
-  volunteers: Volunteer[];
-  reports: Report[];
-  panicAlerts: PanicAlert[];
+  stats: DashboardStats
+  recentActivities: ActivityType[]
+  volunteers: Volunteer[]
+  reports: Report[]
+  panicAlerts: PanicAlert[]
 }
 
 export default function Dashboard() {
-  const [role, setRole] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isClient, setIsClient] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const [isTabVisible, setIsTabVisible] = useState(true);
-  
+  const [isLoading, setIsLoading] = useState(true)
+  const [isClient, setIsClient] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+
   // Dashboard data state
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     stats: {
@@ -139,80 +124,151 @@ export default function Dashboard() {
     recentActivities: [],
     volunteers: [],
     reports: [],
-    panicAlerts: []
-  });
+    panicAlerts: [],
+  })
 
   // Previous data untuk comparison
-  const previousDataRef = useRef<DashboardData | null>(null);
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
-  const router = useRouter();
+  const previousDataRef = useRef<DashboardData | null>(null)
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  useEffect(() => {
-    setIsClient(true);
-    const userRole = getUserRole();
-    const userData = getUserData();
-    setRole(userRole);
-    
-    if (userRole === "user") {
-      router.push("/student/emergency");
-      return;
-    }
-    
-    if (userData && !sessionStorage.getItem("welcome_toast_shown")) {
-      toast.success(`Selamat datang, ${userData.name}!`, {
-        description: "Selamat bekerja di dashboard admin",
-        duration: 5000,
-        style: {
-          background: 'rgb(34, 197, 94)',
-          color: 'white',
-          border: '1px solid rgb(22, 163, 74)',
-        },
-        className: 'dark:bg-green-600 dark:text-white dark:border-green-500'
-      });
-      sessionStorage.setItem("welcome_toast_shown", "true");
-    }
-    
-    // Initial data fetch
-    fetchDashboardData(false);
-    
-    // Setup visibility change handler - hanya untuk update UI state, bukan untuk auto-refresh
-    const handleVisibilityChange = () => {
-      setIsTabVisible(!document.hidden);
-      console.log(`🔄 Admin tab visibility changed: ${!document.hidden ? 'visible' : 'hidden'}`);
-    };
+  const router = useRouter()
 
-    // Setup auto-refresh yang berjalan terus tanpa tergantung tab visibility
-    refreshIntervalRef.current = setInterval(() => {
-      console.log("🔄 Admin auto-refresh triggered (30s interval)");
-      fetchDashboardData(true);
-    }, 30000); // 30 detik untuk admin
-    
-    // Listen untuk visibility change hanya untuk UI indicator
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    setLastRefresh(new Date());
-    
-    // Cleanup
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-        refreshIntervalRef.current = null;
-        console.log("🔄 Admin auto-refresh cleaned up");
+  const checkForNewActivities = useCallback(
+    (previousData: DashboardData, newData: DashboardData, isAutoRefresh: boolean) => {
+      // FIXED: Only check for truly new items, not just missing from previous comparison
+
+      // Check for new reports - compare by ID only, not by activity generation
+      const newReports = newData.reports.filter(
+        (newReport) => !previousData.reports.some((oldReport) => oldReport.id === newReport.id),
+      )
+
+      // Check for new panic alerts - compare by ID only
+      const newPanics = newData.panicAlerts.filter(
+        (newPanic) => !previousData.panicAlerts.some((oldPanic) => oldPanic.id === newPanic.id),
+      )
+
+      // Check for status changes in reports (resolved reports)
+      const resolvedReports = newData.reports.filter(
+        (newReport) =>
+          newReport.status === "resolved" &&
+          previousData.reports.some((oldReport) => oldReport.id === newReport.id && oldReport.status !== "resolved"),
+      )
+
+      // Check for status changes in panic alerts (handled alerts)
+      const handledPanics = newData.panicAlerts.filter(
+        (newPanic) =>
+          newPanic.status === "handled" &&
+          previousData.panicAlerts.some((oldPanic) => oldPanic.id === newPanic.id && oldPanic.status !== "handled"),
+      )
+
+      // Show notifications only for truly new or changed items
+      if (newReports.length > 0) {
+        const refreshType = isAutoRefresh ? "Auto-refresh" : "Manual refresh"
+        toast.success(`${newReports.length} Laporan Baru Masuk!`, {
+          description: `${refreshType}: ${newReports.length} laporan baru memerlukan perhatian Anda`,
+          duration: 5000,
+          style: {
+            background: "rgb(34, 197, 94)",
+            color: "white",
+            border: "1px solid rgb(22, 163, 74)",
+          },
+          className: "dark:bg-green-600 dark:text-white dark:border-green-500",
+          action: {
+            label: "Lihat",
+            onClick: () => router.push("/admin/reports"),
+          },
+        })
       }
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [router]);
 
-  const fetchDashboardData = async (silentRefresh: boolean = false) => {
+      if (newPanics.length > 0) {
+        const refreshType = isAutoRefresh ? "Auto-refresh" : "Manual refresh"
+        toast.error(`${newPanics.length} Panic Alert Baru!`, {
+          description: `${refreshType}: ${newPanics.length} panic alert darurat memerlukan respon segera`,
+          duration: 7000,
+          style: {
+            background: "rgb(239, 68, 68)",
+            color: "white",
+            border: "1px solid rgb(220, 38, 38)",
+          },
+          className: "dark:bg-red-600 dark:text-white dark:border-red-500",
+          action: {
+            label: "Lihat",
+            onClick: () => router.push("/admin/panic-reports"),
+          },
+        })
+      }
+
+      // Optional: notify for resolved reports
+      if (resolvedReports.length > 0 && isAutoRefresh) {
+        toast.info(`${resolvedReports.length} Laporan Diselesaikan`, {
+          description: `${resolvedReports.length} laporan telah berhasil diselesaikan`,
+          duration: 4000,
+          style: {
+            background: "rgb(34, 197, 94)",
+            color: "white",
+            border: "1px solid rgb(22, 163, 74)",
+          },
+          className: "dark:bg-green-600 dark:text-white dark:border-green-500",
+        })
+      }
+
+      // Check for new volunteers (less frequent notification)
+      const newVolunteers = newData.volunteers.filter(
+        (newVolunteer) => !previousData.volunteers.some((oldVolunteer) => oldVolunteer.id === newVolunteer.id),
+      )
+
+      if (newVolunteers.length > 0) {
+        const refreshType = isAutoRefresh ? "Auto-refresh" : "Manual refresh"
+        toast.info(`${newVolunteers.length} Relawan Baru Bergabung`, {
+          description: `${refreshType}: ${newVolunteers.length} relawan baru telah bergabung ke sistem`,
+          duration: 4000,
+          style: {
+            background: "rgb(59, 130, 246)",
+            color: "white",
+            border: "1px solid rgb(37, 99, 235)",
+          },
+          className: "dark:bg-blue-600 dark:text-white dark:border-blue-500",
+          action: {
+            label: "Lihat",
+            onClick: () => router.push("/admin/volunteers"),
+          },
+        })
+      }
+
+      // FIXED: Only show "no new data" message for manual refresh, not auto refresh
+      if (
+        !isAutoRefresh &&
+        newReports.length === 0 &&
+        newPanics.length === 0 &&
+        newVolunteers.length === 0 &&
+        resolvedReports.length === 0 &&
+        handledPanics.length === 0
+      ) {
+        toast.info("Data Sudah Terbaru", {
+          description: "Tidak ada laporan, panic alert, atau relawan baru saat ini",
+          duration: 3000,
+          style: {
+            background: "rgb(75, 85, 99)",
+            color: "white",
+            border: "1px solid rgb(55, 65, 81)",
+          },
+          className: "dark:bg-gray-600 dark:text-white dark:border-gray-500",
+        })
+      }
+    },
+    [router],
+  )
+
+  // Memoize fetchDashboardData to fix useEffect dependency warning
+  const fetchDashboardData = useCallback(async (silentRefresh = false) => {
     try {
       if (!silentRefresh) {
-        setIsRefreshing(true);
+        setIsRefreshing(true)
       }
 
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
-        throw new Error("Autentikasi diperlukan");
+        throw new Error("Autentikasi diperlukan")
       }
 
       // Initialize new data
@@ -230,244 +286,294 @@ export default function Dashboard() {
         recentActivities: [],
         volunteers: [],
         reports: [],
-        panicAlerts: []
-      };
+        panicAlerts: [],
+      }
 
       // Fetch semua data secara parallel
-      const fetchPromises = [];
+      const fetchPromises = []
 
       // Fetch Volunteers - FIXED: Better error handling and data extraction
       fetchPromises.push(
         fetch("/api/volunteer", {
           headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }).then(async response => {
-          if (response.ok) {
-            const responseText = await response.text();
-            console.log("Volunteers API response:", responseText);
-            
-            try {
-              const volunteerData = JSON.parse(responseText);
-              let volunteers = [];
-              
-              // Handle different response structures
-              if (Array.isArray(volunteerData)) {
-                volunteers = volunteerData;
-              } else if (volunteerData.data && Array.isArray(volunteerData.data)) {
-                volunteers = volunteerData.data;
-              } else if (volunteerData.relawan && Array.isArray(volunteerData.relawan)) {
-                volunteers = volunteerData.relawan;
-              } else if (volunteerData.volunteers && Array.isArray(volunteerData.volunteers)) {
-                volunteers = volunteerData.volunteers;
-              }
-              
-              // Filter only volunteers (role = volunteer or relawan)
-              volunteers = volunteers.filter((user: any) => 
-                user.role === 'volunteer' || user.role === 'relawan'
-              );
-              
-              newData.volunteers = volunteers;
-              newData.stats.totalVolunteers = volunteers.length;
-              
-              // Hitung relawan bulan ini
-              const thisMonth = new Date();
-              thisMonth.setDate(1);
-              newData.stats.volunteersThisMonth = volunteers.filter((volunteer: Volunteer) => 
-                new Date(volunteer.created_at) >= thisMonth
-              ).length;
-              
-              console.log(`Found ${volunteers.length} volunteers, ${newData.stats.volunteersThisMonth} this month`);
-            } catch (parseError) {
-              console.error("Failed to parse volunteers response:", parseError);
-            }
-          } else {
-            console.log("Volunteers API failed with status:", response.status);
-          }
-        }).catch(error => {
-          console.log("Volunteers API error:", error);
-          // Don't use dummy data - leave as 0
         })
-      );
+          .then(async (response) => {
+            if (response.ok) {
+              const responseText = await response.text()
+              console.log("Volunteers API response:", responseText)
+
+              try {
+                const volunteerData = JSON.parse(responseText)
+                let volunteers: Volunteer[] = []
+
+                // Handle different response structures
+                if (Array.isArray(volunteerData)) {
+                  volunteers = volunteerData
+                } else if (volunteerData.data && Array.isArray(volunteerData.data)) {
+                  volunteers = volunteerData.data
+                } else if (volunteerData.relawan && Array.isArray(volunteerData.relawan)) {
+                  volunteers = volunteerData.relawan
+                } else if (volunteerData.volunteers && Array.isArray(volunteerData.volunteers)) {
+                  volunteers = volunteerData.volunteers
+                }
+
+                // Filter only volunteers (role = volunteer or relawan)
+                volunteers = volunteers.filter(
+                  (user: Volunteer) => user.role === "volunteer" || user.role === "relawan",
+                )
+
+                newData.volunteers = volunteers
+                newData.stats.totalVolunteers = volunteers.length
+
+                // Hitung relawan bulan ini
+                const thisMonth = new Date()
+                thisMonth.setDate(1)
+                newData.stats.volunteersThisMonth = volunteers.filter(
+                  (volunteer: Volunteer) => new Date(volunteer.created_at) >= thisMonth,
+                ).length
+
+                console.log(`Found ${volunteers.length} volunteers, ${newData.stats.volunteersThisMonth} this month`)
+              } catch (parseError) {
+                console.error("Failed to parse volunteers response:", parseError)
+              }
+            } else {
+              console.log("Volunteers API failed with status:", response.status)
+            }
+          })
+          .catch((error) => {
+            console.log("Volunteers API error:", error)
+            // Don't use dummy data - leave as 0
+          }),
+      )
 
       // Fetch Reports - FIXED: Better error handling and data extraction
       fetchPromises.push(
         fetch("/api/reports", {
           headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }).then(async response => {
-          if (response.ok) {
-            const responseText = await response.text();
-            console.log("Reports API response:", responseText);
-            
-            try {
-              const reportData = JSON.parse(responseText);
-              let reports = [];
-              
-              // Handle different response structures
-              if (Array.isArray(reportData)) {
-                reports = reportData;
-              } else if (reportData.data && Array.isArray(reportData.data)) {
-                reports = reportData.data;
-              } else if (reportData.reports && Array.isArray(reportData.reports)) {
-                reports = reportData.reports;
-              }
-              
-              newData.reports = reports;
-              newData.stats.totalReports = reports.length;
-              
-              // Hitung berdasarkan status
-              newData.stats.pendingReports = reports.filter((report: Report) => 
-                report.status === 'pending'
-              ).length;
-              
-              newData.stats.resolvedReports = reports.filter((report: Report) => 
-                report.status === 'resolved'
-              ).length;
-              
-              // Hitung laporan bulan ini
-              const thisMonth = new Date();
-              thisMonth.setDate(1);
-              newData.stats.reportsThisMonth = reports.filter((report: Report) => 
-                new Date(report.created_at) >= thisMonth
-              ).length;
-              
-              console.log(`Found ${reports.length} reports, ${newData.stats.pendingReports} pending, ${newData.stats.resolvedReports} resolved`);
-            } catch (parseError) {
-              console.error("Failed to parse reports response:", parseError);
-            }
-          } else {
-            console.log("Reports API failed with status:", response.status);
-          }
-        }).catch(error => {
-          console.log("Reports API error:", error);
-          // Don't use dummy data - leave as 0
         })
-      );
+          .then(async (response) => {
+            if (response.ok) {
+              const responseText = await response.text()
+              console.log("Reports API response:", responseText)
+
+              try {
+                const reportData = JSON.parse(responseText)
+                let reports: Report[] = []
+
+                // Handle different response structures
+                if (Array.isArray(reportData)) {
+                  reports = reportData
+                } else if (reportData.data && Array.isArray(reportData.data)) {
+                  reports = reportData.data
+                } else if (reportData.reports && Array.isArray(reportData.reports)) {
+                  reports = reportData.reports
+                }
+
+                newData.reports = reports
+                newData.stats.totalReports = reports.length
+
+                // Hitung berdasarkan status
+                newData.stats.pendingReports = reports.filter((report: Report) => report.status === "pending").length
+
+                newData.stats.resolvedReports = reports.filter((report: Report) => report.status === "resolved").length
+
+                // Hitung laporan bulan ini
+                const thisMonth = new Date()
+                thisMonth.setDate(1)
+                newData.stats.reportsThisMonth = reports.filter(
+                  (report: Report) => new Date(report.created_at) >= thisMonth,
+                ).length
+
+                console.log(
+                  `Found ${reports.length} reports, ${newData.stats.pendingReports} pending, ${newData.stats.resolvedReports} resolved`,
+                )
+              } catch (parseError) {
+                console.error("Failed to parse reports response:", parseError)
+              }
+            } else {
+              console.log("Reports API failed with status:", response.status)
+            }
+          })
+          .catch((error) => {
+            console.log("Reports API error:", error)
+            // Don't use dummy data - leave as 0
+          }),
+      )
 
       // Fetch Panic Alerts - FIXED: Better error handling and data extraction
       fetchPromises.push(
         fetch("/api/panic", {
           headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }).then(async response => {
-          if (response.ok) {
-            const responseText = await response.text();
-            console.log("Panic API response:", responseText);
-            
-            try {
-              const panicData = JSON.parse(responseText);
-              let alerts = [];
-              
-              // Handle different response structures
-              if (Array.isArray(panicData)) {
-                alerts = panicData;
-              } else if (panicData.data && Array.isArray(panicData.data)) {
-                alerts = panicData.data;
-              } else if (panicData.panic && Array.isArray(panicData.panic)) {
-                alerts = panicData.panic;
-              } else if (panicData.panic_alerts && Array.isArray(panicData.panic_alerts)) {
-                alerts = panicData.panic_alerts;
-              }
-              
-              newData.panicAlerts = alerts;
-              newData.stats.totalPanicAlerts = alerts.length;
-              
-              // Hitung panic alert yang masih aktif (pending/active/handling)
-              newData.stats.activePanics = alerts.filter((alert: PanicAlert) => 
-                alert.status === 'pending' || alert.status === 'active' || alert.status === 'handling'
-              ).length;
-              
-              console.log(`Found ${alerts.length} panic alerts, ${newData.stats.activePanics} active`);
-            } catch (parseError) {
-              console.error("Failed to parse panic response:", parseError);
-            }
-          } else {
-            console.log("Panic API failed with status:", response.status);
-          }
-        }).catch(error => {
-          console.log("Panic API error:", error);
-          // Don't use dummy data - leave as 0
         })
-      );
+          .then(async (response) => {
+            if (response.ok) {
+              const responseText = await response.text()
+              console.log("Panic API response:", responseText)
+
+              try {
+                const panicData = JSON.parse(responseText)
+                let alerts: PanicAlert[] = []
+
+                // Handle different response structures
+                if (Array.isArray(panicData)) {
+                  alerts = panicData
+                } else if (panicData.data && Array.isArray(panicData.data)) {
+                  alerts = panicData.data
+                } else if (panicData.panic && Array.isArray(panicData.panic)) {
+                  alerts = panicData.panic
+                } else if (panicData.panic_alerts && Array.isArray(panicData.panic_alerts)) {
+                  alerts = panicData.panic_alerts
+                }
+
+                newData.panicAlerts = alerts
+                newData.stats.totalPanicAlerts = alerts.length
+
+                // Hitung panic alert yang masih aktif (pending/active/handling)
+                newData.stats.activePanics = alerts.filter(
+                  (alert: PanicAlert) =>
+                    alert.status === "pending" || alert.status === "active" || alert.status === "handling",
+                ).length
+
+                console.log(`Found ${alerts.length} panic alerts, ${newData.stats.activePanics} active`)
+              } catch (parseError) {
+                console.error("Failed to parse panic response:", parseError)
+              }
+            } else {
+              console.log("Panic API failed with status:", response.status)
+            }
+          })
+          .catch((error) => {
+            console.log("Panic API error:", error)
+            // Don't use dummy data - leave as 0
+          }),
+      )
 
       // Tunggu semua request selesai
-      await Promise.allSettled(fetchPromises);
+      await Promise.allSettled(fetchPromises)
 
       // Generate recent activities berdasarkan data yang diperoleh
-      newData.recentActivities = generateRecentActivitiesFromData(newData);
+      newData.recentActivities = generateRecentActivitiesFromData(newData)
 
       // Check for new activities dan tampilkan notifikasi
       if (previousDataRef.current) {
-        checkForNewActivities(previousDataRef.current, newData, silentRefresh);
+        checkForNewActivities(previousDataRef.current, newData, silentRefresh)
       }
 
       // Update state
-      setDashboardData(newData);
-      previousDataRef.current = newData;
-      setLastRefresh(new Date());
-      
+      setDashboardData(newData)
+      previousDataRef.current = newData
+      setLastRefresh(new Date())
+
       if (!silentRefresh) {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-      
     } catch (error) {
-      console.error("Error mengambil data:", error);
+      console.error("Error mengambil data:", error)
       if (!silentRefresh) {
         toast.error("Gagal memuat data dashboard", {
           style: {
-            background: 'rgb(239, 68, 68)',
-            color: 'white',
-            border: '1px solid rgb(220, 38, 38)',
+            background: "rgb(239, 68, 68)",
+            color: "white",
+            border: "1px solid rgb(220, 38, 38)",
           },
-          className: 'dark:bg-red-600 dark:text-white dark:border-red-500'
-        });
-        setIsLoading(false);
+          className: "dark:bg-red-600 dark:text-white dark:border-red-500",
+        })
+        setIsLoading(false)
       }
     } finally {
       if (!silentRefresh) {
-        setIsRefreshing(false);
+        setIsRefreshing(false)
       }
     }
-  };
+  }, [checkForNewActivities])
+
+  useEffect(() => {
+    setIsClient(true)
+    const userRole = getUserRole()
+    const userData = getUserData()
+
+    if (userRole === "user") {
+      router.push("/student/emergency")
+      return
+    }
+
+    if (userData && !sessionStorage.getItem("welcome_toast_shown")) {
+      toast.success(`Selamat datang, ${userData.name}!`, {
+        description: "Selamat bekerja di dashboard admin",
+        duration: 5000,
+        style: {
+          background: "rgb(34, 197, 94)",
+          color: "white",
+          border: "1px solid rgb(22, 163, 74)",
+        },
+        className: "dark:bg-green-600 dark:text-white dark:border-green-500",
+      })
+      sessionStorage.setItem("welcome_toast_shown", "true")
+    }
+
+    // Initial data fetch
+    fetchDashboardData(false)
+
+    // Setup auto-refresh yang berjalan terus tanpa tergantung tab visibility
+    refreshIntervalRef.current = setInterval(() => {
+      console.log("🔄 Admin auto-refresh triggered (30s interval)")
+      fetchDashboardData(true)
+    }, 30000) // 30 detik untuk admin
+
+    setLastRefresh(new Date())
+
+    // Cleanup
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current)
+        refreshIntervalRef.current = null
+        console.log("🔄 Admin auto-refresh cleaned up")
+      }
+    }
+  }, [router, fetchDashboardData])
 
   // Generate recent activities berdasarkan data real - FIXED: use stable IDs
-  const generateRecentActivitiesFromData = (data: DashboardData): Activity[] => {
-    const activities: Activity[] = [];
+  const generateRecentActivitiesFromData = (data: DashboardData): ActivityType[] => {
+    const activities: ActivityType[] = []
 
     // Ambil 2 relawan terbaru - FIXED: use stable ID
     const recentVolunteers = data.volunteers
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 2);
+      .slice(0, 2)
 
     recentVolunteers.forEach((volunteer) => {
       activities.push({
         id: `volunteer_${volunteer.id}`, // FIXED: remove Date.now() for stable ID
-        type: 'volunteer_add',
-        title: 'Relawan Baru Bergabung',
+        type: "volunteer_add",
+        title: "Relawan Baru Bergabung",
         description: `${volunteer.name} telah bergabung sebagai relawan`,
         user: volunteer.name,
         timestamp: volunteer.created_at,
-        metadata: { volunteerId: volunteer.id }
-      });
-    });
+        metadata: { volunteerId: volunteer.id },
+      })
+    })
 
     // Ambil 2 laporan terbaru - FIXED: use stable ID
     const recentReports = data.reports
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 2);
+      .slice(0, 2)
 
     recentReports.forEach((report) => {
-      const activityType = report.status === 'resolved' ? 'report_resolved' : 'report_new';
-      const title = report.status === 'resolved' ? 'Laporan Diselesaikan' : 'Laporan Baru Masuk';
-      const description = report.status === 'resolved' 
-        ? `Laporan ${report.problem_type} telah diselesaikan`
-        : `Laporan ${report.problem_type} di ${report.location}`;
+      const activityType = report.status === "resolved" ? "report_resolved" : "report_new"
+      const title = report.status === "resolved" ? "Laporan Diselesaikan" : "Laporan Baru Masuk"
+      const description =
+        report.status === "resolved"
+          ? `Laporan ${report.problem_type} telah diselesaikan`
+          : `Laporan ${report.problem_type} di ${report.location}`
 
       activities.push({
         id: `report_${report.id}_${report.status}`, // FIXED: use report ID + status for stable ID
@@ -476,21 +582,22 @@ export default function Dashboard() {
         description: description,
         user: report.user.name,
         timestamp: report.created_at,
-        metadata: { reportId: report.id, status: report.status }
-      });
-    });
+        metadata: { reportId: report.id, status: report.status },
+      })
+    })
 
     // Ambil 1 panic alert terbaru - FIXED: use stable ID
     const recentPanic = data.panicAlerts
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 1);
+      .slice(0, 1)
 
     recentPanic.forEach((panic) => {
-      const activityType = panic.status === 'handled' ? 'panic_handled' : 'panic_new';
-      const title = panic.status === 'handled' ? 'Panic Alert Ditangani' : 'Panic Alert Baru';
-      const description = panic.status === 'handled'
-        ? 'Alert darurat telah ditangani oleh tim keamanan'
-        : `Alert darurat dari koordinat ${panic.latitude.toFixed(4)}, ${panic.longitude.toFixed(4)}`;
+      const activityType = panic.status === "handled" ? "panic_handled" : "panic_new"
+      const title = panic.status === "handled" ? "Panic Alert Ditangani" : "Panic Alert Baru"
+      const description =
+        panic.status === "handled"
+          ? "Alert darurat telah ditangani oleh tim keamanan"
+          : `Alert darurat dari koordinat ${panic.latitude.toFixed(4)}, ${panic.longitude.toFixed(4)}`
 
       activities.push({
         id: `panic_${panic.id}_${panic.status}`, // FIXED: use panic ID + status for stable ID
@@ -499,252 +606,66 @@ export default function Dashboard() {
         description: description,
         user: panic.user.name,
         timestamp: panic.created_at,
-        metadata: { panicId: panic.id }
-      });
-    });
+        metadata: { panicId: panic.id },
+      })
+    })
 
     // Sort berdasarkan timestamp dan ambil 5 terbaru
-    return activities
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 5);
-  };
+    return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 5)
+  }
 
-  // Check for new activities - FIXED: improve detection logic
-  const checkForNewActivities = useCallback((previousData: DashboardData, newData: DashboardData, isAutoRefresh: boolean) => {
-    // FIXED: Only check for truly new items, not just missing from previous comparison
-    
-    // Check for new reports - compare by ID only, not by activity generation
-    const newReports = newData.reports.filter(newReport => 
-      !previousData.reports.some(oldReport => oldReport.id === newReport.id)
-    );
-
-    // Check for new panic alerts - compare by ID only
-    const newPanics = newData.panicAlerts.filter(newPanic => 
-      !previousData.panicAlerts.some(oldPanic => oldPanic.id === newPanic.id)
-    );
-
-    // Check for status changes in reports (resolved reports)
-    const resolvedReports = newData.reports.filter(newReport => 
-      newReport.status === 'resolved' && 
-      previousData.reports.some(oldReport => 
-        oldReport.id === newReport.id && oldReport.status !== 'resolved'
-      )
-    );
-
-    // Check for status changes in panic alerts (handled alerts)
-    const handledPanics = newData.panicAlerts.filter(newPanic => 
-      newPanic.status === 'handled' && 
-      previousData.panicAlerts.some(oldPanic => 
-        oldPanic.id === newPanic.id && oldPanic.status !== 'handled'
-      )
-    );
-
-    // Show notifications only for truly new or changed items
-    if (newReports.length > 0) {
-      const refreshType = isAutoRefresh ? "Auto-refresh" : "Manual refresh";
-      toast.success(`${newReports.length} Laporan Baru Masuk!`, {
-        description: `${refreshType}: ${newReports.length} laporan baru memerlukan perhatian Anda`,
-        duration: 5000,
-        style: {
-          background: 'rgb(34, 197, 94)',
-          color: 'white',
-          border: '1px solid rgb(22, 163, 74)',
-        },
-        className: 'dark:bg-green-600 dark:text-white dark:border-green-500',
-        action: {
-          label: "Lihat",
-          onClick: () => router.push("/admin/reports")
-        }
-      });
-    }
-
-    if (newPanics.length > 0) {
-      const refreshType = isAutoRefresh ? "Auto-refresh" : "Manual refresh";
-      toast.error(`${newPanics.length} Panic Alert Baru!`, {
-        description: `${refreshType}: ${newPanics.length} panic alert darurat memerlukan respon segera`,
-        duration: 7000,
-        style: {
-          background: 'rgb(239, 68, 68)',
-          color: 'white',
-          border: '1px solid rgb(220, 38, 38)',
-        },
-        className: 'dark:bg-red-600 dark:text-white dark:border-red-500',
-        action: {
-          label: "Lihat",
-          onClick: () => router.push("/admin/panic-reports")
-        }
-      });
-    }
-
-    // Optional: notify for resolved reports
-    if (resolvedReports.length > 0 && isAutoRefresh) {
-      toast.info(`${resolvedReports.length} Laporan Diselesaikan`, {
-        description: `${resolvedReports.length} laporan telah berhasil diselesaikan`,
-        duration: 4000,
-        style: {
-          background: 'rgb(34, 197, 94)',
-          color: 'white',
-          border: '1px solid rgb(22, 163, 74)',
-        },
-        className: 'dark:bg-green-600 dark:text-white dark:border-green-500'
-      });
-    }
-
-    // Check for new volunteers (less frequent notification)
-    const newVolunteers = newData.volunteers.filter(newVolunteer => 
-      !previousData.volunteers.some(oldVolunteer => oldVolunteer.id === newVolunteer.id)
-    );
-
-    if (newVolunteers.length > 0) {
-      const refreshType = isAutoRefresh ? "Auto-refresh" : "Manual refresh";
-      toast.info(`${newVolunteers.length} Relawan Baru Bergabung`, {
-        description: `${refreshType}: ${newVolunteers.length} relawan baru telah bergabung ke sistem`,
-        duration: 4000,
-        style: {
-          background: 'rgb(59, 130, 246)',
-          color: 'white',
-          border: '1px solid rgb(37, 99, 235)',
-        },
-        className: 'dark:bg-blue-600 dark:text-white dark:border-blue-500',
-        action: {
-          label: "Lihat",
-          onClick: () => router.push("/admin/volunteers")
-        }
-      });
-    }
-
-    // FIXED: Only show "no new data" message for manual refresh, not auto refresh
-    if (!isAutoRefresh && newReports.length === 0 && newPanics.length === 0 && newVolunteers.length === 0 && resolvedReports.length === 0 && handledPanics.length === 0) {
-      toast.info("Data Sudah Terbaru", {
-        description: "Tidak ada laporan, panic alert, atau relawan baru saat ini",
-        duration: 3000,
-        style: {
-          background: 'rgb(75, 85, 99)',
-          color: 'white',
-          border: '1px solid rgb(55, 65, 81)',
-        },
-        className: 'dark:bg-gray-600 dark:text-white dark:border-gray-500'
-      });
-    }
-  }, [router]);
 
   // Helper functions
   const formatTimeAgo = (date: string) => {
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return `${diffInSeconds} detik yang lalu`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit yang lalu`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam yang lalu`;
-    return `${Math.floor(diffInSeconds / 86400)} hari yang lalu`;
-  };
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000)
 
-  const getActivityIcon = (type: Activity['type']) => {
+    if (diffInSeconds < 60) return `${diffInSeconds} detik yang lalu`
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit yang lalu`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam yang lalu`
+    return `${Math.floor(diffInSeconds / 86400)} hari yang lalu`
+  }
+
+  const getActivityIcon = (type: ActivityType["type"]) => {
     switch (type) {
-      case 'volunteer_add':
-        return <UserPlus className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
-      case 'volunteer_remove':
-        return <UserMinus className="h-4 w-4 text-orange-600 dark:text-orange-400" />;
-      case 'report_new':
-        return <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />;
-      case 'report_resolved':
-        return <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
-      case 'panic_new':
-        return <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />;
-      case 'panic_handled':
-        return <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />;
+      case "volunteer_add":
+        return <UserPlus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+      case "volunteer_remove":
+        return <UserMinus className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+      case "report_new":
+        return <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
+      case "report_resolved":
+        return <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+      case "panic_new":
+        return <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+      case "panic_handled":
+        return <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
       default:
-        return <Activity className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
+        return <Activity className="h-4 w-4 text-gray-600 dark:text-gray-400" />
     }
-  };
+  }
 
-  const getActivityColor = (type: Activity['type']) => {
+  const getActivityColor = (type: ActivityType["type"]) => {
     switch (type) {
-      case 'volunteer_add':
-        return 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800';
-      case 'volunteer_remove':
-        return 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800';
-      case 'report_new':
-        return 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800';
-      case 'report_resolved':
-        return 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800';
-      case 'panic_new':
-        return 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800';
-      case 'panic_handled':
-        return 'bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800';
+      case "volunteer_add":
+        return "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800"
+      case "volunteer_remove":
+        return "bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800"
+      case "report_new":
+        return "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
+      case "report_resolved":
+        return "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800"
+      case "panic_new":
+        return "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800"
+      case "panic_handled":
+        return "bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800"
       default:
-        return 'bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-800';
+        return "bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-800"
     }
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.5,
-        ease: "easeOut"
-      }
-    })
-  };
-
-  // Helper functions for formatting
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: 'Asia/Jakarta'
-    }).format(date) + ' WIB';
-  };
-
-  const formatProblemType = (type: string) => {
-    const typeMap: { [key: string]: string } = {
-      "electrical": "Masalah Listrik",
-      "electricity": "Masalah Listrik",
-      "tree": "Bahaya Pohon",
-      "stairs": "Masalah Tangga",
-      "elevator": "Masalah Lift",
-      "door": "Masalah Pintu",
-      "infrastructure": "Infrastruktur",
-      "water_supply": "Pasokan Air",
-      "waste_management": "Pengelolaan Sampah",
-      "public_safety": "Keselamatan Umum",
-      "public_health": "Kesehatan Umum",
-      "environmental": "Lingkungan",
-      "other": "Lainnya"
-    };
-    
-    return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusMap: { [key: string]: {text: string, color: string} } = {
-      'pending': {
-        text: "Menunggu",
-        color: "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800",
-      },
-      'handled': {
-        text: "Ditangani",
-        color: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
-      },
-      'resolved': {
-        text: "Diselesaikan",
-        color: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
-      }
-    };
-    
-    return statusMap[status] || {
-      text: status,
-      color: "bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800",
-    };
-  };
+  }
 
   if (!isClient) {
-    return null;
+    return null
   }
 
   if (isLoading) {
@@ -755,13 +676,13 @@ export default function Dashboard() {
           <p className="text-gray-600 dark:text-gray-300 text-lg">Memuat dashboard...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="space-y-4 sm:space-y-6 transition-theme">
       {/* Modern Header with Dark Mode Support */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -769,16 +690,14 @@ export default function Dashboard() {
       >
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Dashboard Admin
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              Pantau dan kelola seluruh aktivitas sistem SIGAP
-            </p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Dashboard Admin</h1>
+            <p className="text-gray-600 dark:text-gray-300">Pantau dan kelola seluruh aktivitas sistem SIGAP</p>
             <div className="flex items-center space-x-4 mt-3">
               <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                <div className={`w-2 h-2 rounded-full ${refreshIntervalRef.current ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                <span>Auto-refresh {refreshIntervalRef.current ? 'aktif' : 'nonaktif'}</span>
+                <div
+                  className={`w-2 h-2 rounded-full ${refreshIntervalRef.current ? "bg-green-500 animate-pulse" : "bg-red-500"}`}
+                ></div>
+                <span>Auto-refresh {refreshIntervalRef.current ? "aktif" : "nonaktif"}</span>
               </div>
               <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                 <Activity className="w-4 h-4" />
@@ -787,7 +706,7 @@ export default function Dashboard() {
               {lastRefresh && (
                 <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                   <Clock className="w-4 h-4" />
-                  <span>Terakhir: {lastRefresh.toLocaleTimeString('id-ID')}</span>
+                  <span>Terakhir: {lastRefresh.toLocaleTimeString("id-ID")}</span>
                 </div>
               )}
             </div>
@@ -795,8 +714,8 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button
               onClick={() => {
-                setIsRefreshing(true);
-                fetchDashboardData(false); // Manual refresh dengan parameter false
+                setIsRefreshing(true)
+                fetchDashboardData(false) // Manual refresh dengan parameter false
               }}
               variant="outline"
               className="border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 w-full sm:w-auto transition-theme"
@@ -873,9 +792,7 @@ export default function Dashboard() {
               </p>
               <div className="flex items-center mt-2">
                 <AlertTriangle className="h-4 w-4 text-red-500 dark:text-red-400 mr-1" />
-                <span className="text-sm text-red-600 dark:text-red-400">
-                  {dashboardData.stats.activePanics} aktif
-                </span>
+                <span className="text-sm text-red-600 dark:text-red-400">{dashboardData.stats.activePanics} aktif</span>
               </div>
             </div>
             <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
@@ -934,7 +851,7 @@ export default function Dashboard() {
                     key={activity.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 + (index * 0.1), duration: 0.3 }}
+                    transition={{ delay: 0.1 + index * 0.1, duration: 0.3 }}
                     className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-200 ${getActivityColor(activity.type)}`}
                   >
                     <div className="flex items-start gap-4">
@@ -965,19 +882,19 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center p-8 sm:p-12"
-              >
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center p-8 sm:p-12">
                 <div className="flex flex-col items-center space-y-4">
                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
                     <Activity className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div className="space-y-3">
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">Belum ada aktivitas terbaru</h3>
-                    <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">Aktivitas sistem akan muncul di sini secara otomatis</p>
-                    <Button 
+                    <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
+                      Belum ada aktivitas terbaru
+                    </h3>
+                    <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
+                      Aktivitas sistem akan muncul di sini secara otomatis
+                    </p>
+                    <Button
                       onClick={() => fetchDashboardData(false)}
                       className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
                       size="sm"
@@ -1023,7 +940,7 @@ export default function Dashboard() {
 
       {/* Enhanced Auto-refresh indicator with Dark Mode */}
       {lastRefresh && (
-        <motion.div 
+        <motion.div
           className="fixed bottom-6 right-6 z-50"
           initial={{ opacity: 0, scale: 0 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -1031,14 +948,16 @@ export default function Dashboard() {
         >
           <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-4 transition-theme">
             <div className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${refreshIntervalRef.current ? 'animate-pulse bg-green-500' : 'bg-red-500'}`}></div>
+              <div
+                className={`w-3 h-3 rounded-full ${refreshIntervalRef.current ? "animate-pulse bg-green-500" : "bg-red-500"}`}
+              ></div>
               <div className="text-sm">
                 <p className="font-medium text-gray-800 dark:text-gray-200 flex items-center">
-                  <RefreshCw className={`h-3 w-3 mr-1 ${refreshIntervalRef.current ? 'animate-spin' : ''}`} />
-                  Auto-refresh {refreshIntervalRef.current ? 'aktif' : 'nonaktif'}
+                  <RefreshCw className={`h-3 w-3 mr-1 ${refreshIntervalRef.current ? "animate-spin" : ""}`} />
+                  Auto-refresh {refreshIntervalRef.current ? "aktif" : "nonaktif"}
                 </p>
                 <p className="text-gray-600 dark:text-gray-400 text-xs">
-                  Setiap 30 detik • Terakhir: {lastRefresh.toLocaleTimeString('id-ID')}
+                  Setiap 30 detik • Terakhir: {lastRefresh.toLocaleTimeString("id-ID")}
                 </p>
               </div>
             </div>
@@ -1046,5 +965,5 @@ export default function Dashboard() {
         </motion.div>
       )}
     </div>
-  );
+  )
 }
