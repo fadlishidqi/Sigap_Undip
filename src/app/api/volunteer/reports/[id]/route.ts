@@ -4,9 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 // PATCH - Update status laporan oleh volunteer
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params karena sekarang berupa Promise
+    const { id } = await params;
+    
     const authHeader = request.headers.get("Authorization");
     
     if (!authHeader) {
@@ -15,10 +18,9 @@ export async function PATCH(
         { status: 401 }
       );
     }
-
+    
     const body = await request.json();
-    const reportId = params.id;
-
+    const reportId = id;
     console.log(`Updating report ${reportId} with:`, body);
     
     const response = await fetch(`https://sigap-api-5hk6r.ondigitalocean.app/api/reports/${reportId}`, {
@@ -30,7 +32,7 @@ export async function PATCH(
       },
       body: JSON.stringify(body),
     });
-
+    
     const responseText = await response.text();
     console.log(`Update report ${reportId} response:`, responseText);
     
@@ -44,7 +46,7 @@ export async function PATCH(
         { status: 500 }
       );
     }
-
+    
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error("Update report error:", error);

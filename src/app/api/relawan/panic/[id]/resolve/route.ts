@@ -4,9 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 // POST - Resolve Panic Report (Relawan)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params karena sekarang berupa Promise
+    const { id } = await params;
+    
     const authHeader = request.headers.get("Authorization");
     
     if (!authHeader) {
@@ -17,7 +20,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const panicId = params.id;
+    const panicId = id;
 
     console.log(`Resolving panic report ${panicId}:`, body);
     

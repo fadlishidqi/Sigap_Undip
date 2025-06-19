@@ -3,9 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params karena sekarang berupa Promise
+    const { id } = await params;
+    
     // Get authorization header from the request
     const authHeader = request.headers.get("Authorization");
     
@@ -15,10 +18,10 @@ export async function GET(
         { status: 401 }
       );
     }
-
-    const reportId = params.id;
+    
+    const reportId = id;
     console.log("Fetching report detail for ID:", reportId);
-
+    
     // Forward the request to the external API
     const response = await fetch(`https://sigap-api-5hk6r.ondigitalocean.app/api/reports/${reportId}`, {
       method: "GET",
@@ -27,7 +30,7 @@ export async function GET(
         "Accept": "application/json",
       },
     });
-
+    
     // Get the response as text first (for debugging)
     const responseText = await response.text();
     console.log(`External API report ${reportId} response:`, responseText);
@@ -43,7 +46,7 @@ export async function GET(
         { status: 500 }
       );
     }
-
+    
     // Return the response with the same status
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

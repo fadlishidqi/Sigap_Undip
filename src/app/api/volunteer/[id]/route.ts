@@ -4,9 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 // GET single volunteer
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params karena sekarang berupa Promise
+    const { id } = await params;
+    
     // Get authorization header from the request
     const authHeader = request.headers.get("Authorization");
     
@@ -17,7 +20,7 @@ export async function GET(
       );
     }
 
-    const volunteerId = params.id;
+    const volunteerId = id;
     // Use the correct API endpoint
     const response = await fetch(`https://sigap-api-5hk6r.ondigitalocean.app/api/admin/relawan/${volunteerId}`, {
       method: "GET",
@@ -54,9 +57,12 @@ export async function GET(
 // PUT update volunteer - Updated to use the correct endpoint
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params karena sekarang berupa Promise
+    const { id } = await params;
+    
     // Get authorization header from the request
     const authHeader = request.headers.get("Authorization");
     
@@ -67,7 +73,7 @@ export async function PUT(
       );
     }
 
-    const volunteerId = params.id;
+    const volunteerId = id;
     const body = await request.json();
 
     // Use the CORRECT API endpoint for updating users
@@ -108,9 +114,12 @@ export async function PUT(
 // DELETE volunteer - Already updated to use the correct endpoint
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params karena sekarang berupa Promise
+    const { id } = await params;
+    
     // Get authorization header from the request
     const authHeader = request.headers.get("Authorization");
     
@@ -121,7 +130,7 @@ export async function DELETE(
       );
     }
 
-    const volunteerId = params.id;
+    const volunteerId = id;
     
     // Use the correct API endpoint for deleting users
     const response = await fetch(`https://sigap-api-5hk6r.ondigitalocean.app/api/admin/users/${volunteerId}`, {

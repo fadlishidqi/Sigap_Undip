@@ -3,9 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params karena sekarang berupa Promise
+    const { id } = await params;
+    
     const authHeader = request.headers.get("Authorization");
     
     if (!authHeader) {
@@ -16,7 +19,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const panicId = params.id;
+    const panicId = id;
 
     // Validate required fields
     if (!body.status) {

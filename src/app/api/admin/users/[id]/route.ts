@@ -4,9 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 // GET - Get User by ID (Admin)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params karena sekarang berupa Promise
+    const { id } = await params;
+    
     const authHeader = request.headers.get("Authorization");
     
     if (!authHeader) {
@@ -15,8 +18,8 @@ export async function GET(
         { status: 401 }
       );
     }
-
-    const userId = params.id;
+    
+    const userId = id;
     
     const response = await fetch(`https://sigap-api-5hk6r.ondigitalocean.app/api/admin/users/${userId}`, {
       method: "GET",
@@ -25,7 +28,7 @@ export async function GET(
         "Accept": "application/json",
       },
     });
-
+    
     const responseText = await response.text();
     console.log(`Get user ${userId} response:`, responseText);
     
@@ -39,7 +42,7 @@ export async function GET(
         { status: 500 }
       );
     }
-
+    
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error("Get user error:", error);
@@ -53,9 +56,12 @@ export async function GET(
 // DELETE - Delete User (Admin)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params karena sekarang berupa Promise
+    const { id } = await params;
+    
     const authHeader = request.headers.get("Authorization");
     
     if (!authHeader) {
@@ -64,8 +70,8 @@ export async function DELETE(
         { status: 401 }
       );
     }
-
-    const userId = params.id;
+    
+    const userId = id;
     
     const response = await fetch(`https://sigap-api-5hk6r.ondigitalocean.app/api/admin/users/${userId}`, {
       method: "DELETE",
@@ -74,7 +80,7 @@ export async function DELETE(
         "Accept": "application/json",
       },
     });
-
+    
     const responseText = await response.text();
     console.log(`Delete user ${userId} response:`, responseText);
     
@@ -88,7 +94,7 @@ export async function DELETE(
         { status: 500 }
       );
     }
-
+    
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error("Delete user error:", error);
